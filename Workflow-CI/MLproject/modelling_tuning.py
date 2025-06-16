@@ -72,7 +72,7 @@ with mlflow.start_run(run_name="Modeling_Dengan_Tuning"):
     mlflow.log_metric("precision", precision)
     mlflow.log_metric("recall", recall)
     mlflow.log_metric("f1_score", f1)
-    mlflow.sklearn.log_model(best_model, "rf_cluster_model_tuning", input_example=X_train[:5])
+    mlflow.sklearn.log_model(best_model, "model", input_example=X_train[:5])
 
     # Output ke console
     print("Model RandomForestClassifier dengan Tuning digunakan.")
