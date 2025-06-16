@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns/434305971667239173/60767cc4a42b4683aff94b9e974b6639/artifacts
+end_time: 1750055059491
+entry_point_name: ''
+experiment_id: '434305971667239173'
+lifecycle_stage: active
+run_id: 60767cc4a42b4683aff94b9e974b6639
+run_name: Save Final Dataset (v1.0)
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750055059339
+status: 3
+tags: []
+user_id: promac

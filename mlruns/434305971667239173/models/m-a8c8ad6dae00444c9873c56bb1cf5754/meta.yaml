@@ -1,0 +1,10 @@
+artifact_location: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns/434305971667239173/models/m-a8c8ad6dae00444c9873c56bb1cf5754/artifacts
+creation_timestamp: 1750066225861
+experiment_id: '434305971667239173'
+last_updated_timestamp: 1750066236047
+model_id: m-a8c8ad6dae00444c9873c56bb1cf5754
+model_type: null
+name: rf_cluster_model_default
+source_run_id: 4bf1895ffc734aa0b7885498da7f8a5e
+status: 2
+status_message: null

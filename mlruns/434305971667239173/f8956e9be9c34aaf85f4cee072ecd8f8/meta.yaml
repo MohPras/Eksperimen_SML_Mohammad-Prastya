@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns/434305971667239173/f8956e9be9c34aaf85f4cee072ecd8f8/artifacts
+end_time: 1750054081817
+entry_point_name: ''
+experiment_id: '434305971667239173'
+lifecycle_stage: active
+run_id: f8956e9be9c34aaf85f4cee072ecd8f8
+run_name: konversi date_added ke datetime (v1.0)
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750054081640
+status: 3
+tags: []
+user_id: promac

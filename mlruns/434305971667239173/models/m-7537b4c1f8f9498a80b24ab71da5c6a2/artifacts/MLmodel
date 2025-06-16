@@ -1,0 +1,34 @@
+artifact_path: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns/434305971667239173/models/m-7537b4c1f8f9498a80b24ab71da5c6a2/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.2
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.0
+is_signature_from_type_hint: false
+mlflow_version: 3.1.0
+model_id: m-7537b4c1f8f9498a80b24ab71da5c6a2
+model_size_bytes: 385296
+model_uuid: m-7537b4c1f8f9498a80b24ab71da5c6a2
+prompts: null
+run_id: 21660729b6364991812ce70bbc084a45
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "double", "name": "PC1", "required": true}, {"type": "double",
+    "name": "PC2", "required": true}]'
+  outputs: '[{"type": "double", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2025-06-16 09:35:06.805710'

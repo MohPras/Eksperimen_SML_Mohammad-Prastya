@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns/0/dcd8fa4037df401c9b627e4cd98ad956/artifacts
+end_time: 1750058672135
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: dcd8fa4037df401c9b627e4cd98ad956
+run_name: Preprocessing Otomatis
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750058671620
+status: 4
+tags: []
+user_id: promac
