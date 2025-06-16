@@ -9,7 +9,7 @@ import os
 import sys
 
 # mlflow.set_tracking_uri("file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns")
-mlflow.set_tracking_uri("file:./mlruns")
+mlflow.set_tracking_uri("file:///tmp/mlruns") 
 mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
 
 # ===============================
@@ -152,7 +152,9 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     # ===============================
     os.makedirs("preprocesing", exist_ok=True)
     output_path = "preprocesing/netflix_preprocessing.csv"
+    print("🚧 Menyimpan CSV hasil preprocessing...")
     df.to_csv(output_path, index=False)
+    print("✅ CSV berhasil disimpan!")
 
     mlflow.log_artifact(output_path)
     mlflow.log_param("output_file", output_path)
