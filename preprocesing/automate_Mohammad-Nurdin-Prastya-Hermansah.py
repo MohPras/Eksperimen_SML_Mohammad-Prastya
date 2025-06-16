@@ -8,8 +8,11 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-# mlflow.set_tracking_uri("file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns")
-mlflow.set_tracking_uri("file:./mlruns")
+# Tentukan path tracking untuk GitHub Actions
+mlflow_tracking_path = os.path.abspath("mlruns")
+os.makedirs(mlflow_tracking_path, exist_ok=True)
+
+mlflow.set_tracking_uri(f"file://{mlflow_tracking_path}")
 mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
 
 # ===============================

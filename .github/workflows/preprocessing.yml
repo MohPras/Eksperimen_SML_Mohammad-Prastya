@@ -13,29 +13,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: 🐍 Setup Python
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: |
           if [ -f preprocesing/requirements.txt ]; then pip install -r preprocesing/requirements.txt; fi
 
-      - name: ⚙️ Run Preprocessing Script
+      - name: Setup MLflow Tracking Directory
+        run: mkdir -p preprocesing/mlruns
+
+      - name: Run Preprocessing Script
         run: python preprocesing/automate_Mohammad-Nurdin-Prastya-Hermansah.py
 
-      - name: 📤 Upload Processed Dataset & PKL Files
+      - name: Upload Processed Dataset/PKL as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: processed-artifacts
           path: preprocesing/
 
-      - name: 📤 Upload MLflow Tracking Folder
+      - name: Upload MLflow Logs
         uses: actions/upload-artifact@v4
         with:
-          name: mlruns
-          path: ./mlruns/
+          name: mlflow-logs
+          path: preprocesing/mlruns
