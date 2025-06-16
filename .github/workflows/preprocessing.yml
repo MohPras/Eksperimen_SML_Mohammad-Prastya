@@ -25,20 +25,22 @@ jobs:
         run: |
           if [ -f preprocesing/requirements.txt ]; then pip install -r preprocesing/requirements.txt; fi
 
-      - name: Setup MLflow Tracking Directory
-        run: mkdir -p preprocesing/mlruns
+      - name: Setup Output Directories
+        run: |
+          mkdir -p outputs
+          mkdir -p mlruns
 
       - name: Run Preprocessing Script
         run: python preprocesing/automate_Mohammad-Nurdin-Prastya-Hermansah.py
 
-      - name: Upload Processed Dataset/PKL as Artifact
+      - name: Upload Preprocessed Dataset
         uses: actions/upload-artifact@v4
         with:
-          name: processed-artifacts
-          path: preprocesing/
+          name: preprocessed-dataset
+          path: outputs/netflix_preprocessing.csv
 
       - name: Upload MLflow Logs
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-logs
-          path: preprocesing/mlruns
+          path: mlruns
