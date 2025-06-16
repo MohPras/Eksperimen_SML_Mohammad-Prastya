@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-mlflow.set_tracking_uri("file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns")
+# mlflow.set_tracking_uri("file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns")
+mlflow.set_tracking_uri("file:./mlruns")
 mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
 
 # ===============================
@@ -122,7 +123,7 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     # ===============================
     # Scaling 
     # ===============================
-    numeric_cols_for_scaling = scaler.feature_names_in_  # kolom saat fit scaler
+    numeric_cols_for_scaling = scaler.feature_names_in_
     df_scaled = scaler.transform(df[numeric_cols_for_scaling])
     df[numeric_cols_for_scaling] = df_scaled
     mlflow.log_param("scaling_applied", True)
@@ -132,18 +133,13 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     # PCA Transformasi
     # ===============================
     pca = load("preprocesing/prepocesing_pkl/pca_model.pkl")
-
-    # Ambil hanya kolom yang cocok saat PCA dilatih
     pca_input_cols = pca.feature_names_in_
-    df_for_pca = df[pca_input_cols]  # pastikan urutan & nama kolom sesuai
-
+    df_for_pca = df[pca_input_cols]
     df_pca = pca.transform(df_for_pca)
 
-    # Buat kolom PCA baru
     pca_columns = [f'PC{i+1}' for i in range(df_pca.shape[1])]
     df_pca = pd.DataFrame(df_pca, columns=pca_columns, index=df.index)
 
-    # Hapus kolom original (input ke PCA) dan ganti dengan hasil PCA
     df.drop(columns=pca_input_cols, inplace=True)
     df = pd.concat([df, df_pca], axis=1)
 
@@ -151,14 +147,14 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     mlflow.log_param("pca_components", pca.n_components_)
     print("✅ PCA transformasi diterapkan.")
 
-
     # ===============================
     # Save Final Preprocessed Data
     # ===============================
-    output_path = "Membangun_model/netflix_preprocessing.csv"  # arahkan ke dalam folder
+    os.makedirs("preprocesing", exist_ok=True)
+    output_path = "preprocesing/netflix_preprocessing.csv"
     df.to_csv(output_path, index=False)
 
-    mlflow.log_artifact(output_path)  # tetap bisa log file ini
+    mlflow.log_artifact(output_path)
     mlflow.log_param("output_file", output_path)
 
     print(f"✅ Preprocessing selesai. Data disimpan sebagai '{output_path}'")

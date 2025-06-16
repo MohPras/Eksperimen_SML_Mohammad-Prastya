@@ -1,0 +1,35 @@
+name: Run Preprocessing
+
+on:
+  push:
+    paths:
+      - 'netflix_raw/**'
+      - 'preprocesing/**'
+      - '.github/workflows/preprocessing.yml'
+  workflow_dispatch:
+
+jobs:
+  preprocessing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          if [ -f preprocesing/requirements.txt ]; then pip install -r preprocesing/requirements.txt; fi
+
+      - name: Run Preprocessing Script
+        run: python preprocesing/automate_Mohammad-Nurdin-Prastya-Hermansah.py
+
+      - name: Upload Processed Dataset/PKL as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed-artifacts
+          path: preprocesing/
