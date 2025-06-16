@@ -9,7 +9,19 @@ import os
 import sys
 
 # ========== MLflow Setup ==========
-mlflow.set_tracking_uri("file:./mlruns")  # aman, relatif
+# Dapatkan direktori kerja saat ini di runner GitHub Actions
+# Ini adalah root dari repository Anda setelah langkah checkout
+current_working_dir = os.getcwd()
+
+# Buat jalur absolut ke folder mlruns
+mlruns_path = os.path.join(current_working_dir, "mlruns")
+
+# Setel tracking URI MLflow menggunakan jalur absolut
+mlflow.set_tracking_uri(f"file:{mlruns_path}")
+
+# (Opsional) Tambahkan print untuk debugging di log GitHub Actions
+print(f"MLflow tracking URI diatur ke: {mlflow.get_tracking_uri()}")
+
 mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
 
 # ========== Outlier Handler Class ==========
