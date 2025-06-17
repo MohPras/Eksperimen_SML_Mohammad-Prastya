@@ -15,13 +15,10 @@ from sklearn.metrics import (
     classification_report
 )
 
-mlflow.set_tracking_uri("file:/tmp/mlruns")
-mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
-
 def main(csv_url):
     # Pastikan path absolut untuk CSV
     csv_path = os.path.abspath(csv_url)
-    
+
     # Load data
     data_filter = pd.read_csv(csv_path)
 
@@ -46,7 +43,7 @@ def main(csv_url):
         'max_features': ['sqrt', 'log2']
     }
 
-    with mlflow.start_run(run_name="Modeling_Dengan_Tuning"):
+    with mlflow.start_run(run_name="Modeling_Dengan_Tuning", nested=True):
         rf = RandomForestClassifier(random_state=42)
 
         grid_search = GridSearchCV(
@@ -87,7 +84,7 @@ def main(csv_url):
             f.write("\n\nClassification Report:\n")
             f.write(report)
             report_path = f.name
-        
+
         mlflow.log_artifact(report_path, artifact_path="reports")
 
         # Console output
