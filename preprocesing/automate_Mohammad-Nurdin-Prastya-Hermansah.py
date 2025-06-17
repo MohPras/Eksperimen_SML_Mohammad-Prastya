@@ -180,7 +180,7 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     print("✅ CSV berhasil disimpan!")
 
     # Log artefak ini ke MLflow
-    mlflow.log_artifact(output_path)
+    # mlflow.log_artifact(output_path)
     mlflow.log_param("output_file", output_path)
 
     print("✅ Preprocessing selesai.")
