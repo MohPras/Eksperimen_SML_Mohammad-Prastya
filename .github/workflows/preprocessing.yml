@@ -26,14 +26,12 @@ jobs:
           if [ -f preprocesing/requirements.txt ]; then pip install -r preprocesing/requirements.txt; fi
 
       - name: Setup Output Directories
-        run: |
-          mkdir -p outputs
-          # Baris 'mkdir -p mlruns' dihapus karena MLflow akan menulis ke /tmp/mlruns
+        run: mkdir -p outputs
 
       - name: Run Preprocessing Script
         run: python preprocesing/automate_Mohammad-Nurdin-Prastya-Hermansah.py
 
-      - name: Upload Preprocessed Dataset
+      - name: Upload Preprocessed Dataset as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: preprocessed-dataset
@@ -44,3 +42,16 @@ jobs:
         with:
           name: mlflow-logs
           path: /tmp/mlruns/
+
+      - name: Push Preprocessed Dataset to Artifact Repo
+        run: |
+          git config --global user.email "you@example.com"
+          git config --global user.name "your-username"
+
+          git clone https://x-access-token:${{ secrets.ARTIFACTS_PAT }}@github.com/MohPras/mlflow-artifacts.git
+          cp outputs/netflix_preprocessing.csv mlflow-artifacts/
+
+          cd mlflow-artifacts
+          git add netflix_preprocessing.csv
+          git commit -m "Update preprocessed dataset"
+          git push
