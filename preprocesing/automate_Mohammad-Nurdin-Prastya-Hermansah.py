@@ -8,23 +8,13 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-# ========== MLflow Setup ==========
-# Dapatkan direktori kerja saat ini di runner GitHub Actions
-# Ini adalah root dari repository Anda setelah langkah checkout
-current_working_dir = os.getcwd()
-
-# Buat jalur absolut ke folder mlruns
-mlruns_path = os.path.join(current_working_dir, "mlruns")
-
-# Setel tracking URI MLflow menggunakan jalur absolut
-mlflow.set_tracking_uri(f"file:{mlruns_path}")
-
-# (Opsional) Tambahkan print untuk debugging di log GitHub Actions
-print(f"MLflow tracking URI diatur ke: {mlflow.get_tracking_uri()}")
-
+# mlflow.set_tracking_uri("file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns")
+mlflow.set_tracking_uri("file:mlruns")
 mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
 
-# ========== Outlier Handler Class ==========
+# ===============================
+# DEFINISI CLASS OutlierHandler
+# ===============================
 class OutlierHandler(BaseEstimator, TransformerMixin):
     def __init__(self, method="zscore", threshold=3):
         self.method = method
@@ -43,16 +33,22 @@ class OutlierHandler(BaseEstimator, TransformerMixin):
             return pd.DataFrame(X_clean, columns=X.columns, index=X.index)
         return X
 
-# ========== Main MLflow Run ==========
+# ===============================
+# Mulai MLflow Run Utama
+# ===============================
 with mlflow.start_run(run_name="Preprocessing Otomatis"):
 
-    # === Load Dataset ===
+    # ===============================
+    # Load Dataset
+    # ===============================
     df = pd.read_csv("netflix_raw/Genre_netflix.csv")
     mlflow.log_param("input_file", "Genre_netflix.csv")
     mlflow.log_metric("original_rows", len(df))
     mlflow.log_metric("original_columns", len(df.columns))
 
-    # === Extract Duration ===
+    # ===============================
+    # Extract Duration
+    # ===============================
     def extract_duration_numeric(df):
         df['duration_numeric'] = df['duration'].str.extract(r'(\d+)').astype(float)
         mlflow.log_param("duration_extraction", "regex_digits")
@@ -62,11 +58,15 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
         return df
 
     df = extract_duration_numeric(df)
-
-    # === Hapus Kolom Tidak Penting ===
+    
+    # ===============================
+    # Delete Kolom
+    # ===============================
     df.drop(['Unnamed: 0', 'title'], axis=1, inplace=True)
 
-    # === Proses Kolom Tanggal ===
+    # ===============================
+    # Convert date_added to datetime
+    # ===============================
     def process_date_column(df, column='date_added'):
         df[column] = df[column].astype(str).str.strip()
         df[column] = pd.to_datetime(df[column], format='%B %d, %Y', errors='coerce')
@@ -79,7 +79,9 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
 
     df = process_date_column(df)
 
-    # === Load Encoder dan Scaler ===
+    # ===============================
+    # Load Encoder & Scaler (pkl)
+    # ===============================
     def load_pkl(path):
         return load(path)
 
@@ -92,7 +94,9 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
 
     mlflow.log_param("encoder_loaded", True)
 
-    # === Terapkan Encoder ===
+    # ===============================
+    # Apply Encoders
+    # ===============================
     df['type'] = type_encoder.transform(df['type'])
     df['rating'] = rating_encoder.transform(df[['rating']]).ravel()
     df['cluster'] = cluster_encoder.transform(df['cluster'])
@@ -103,7 +107,9 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     df = pd.concat([df, country_encoded, listedin_encoded], axis=1)
     print("✅ Label encoding & binary encoding diterapkan.")
 
-    # === Outlier Handling ===
+    # ===============================
+    # Handle Outliers
+    # ===============================
     df_numeric = df.select_dtypes(include='number')
     outlier_handler = OutlierHandler(method="zscore", threshold=3)
     outlier_handler.fit(df_numeric)
@@ -112,16 +118,20 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     mlflow.log_param("outlier_handler_applied", True)
     mlflow.log_param("outlier_method", outlier_handler.method)
     mlflow.log_param("outlier_threshold", outlier_handler.threshold)
-    print("✅ Outlier handling diterapkan.")
+    print("✅ Outlier handling diterapkan tanpa file .pkl.")
 
-    # === Scaling ===
+    # ===============================
+    # Scaling 
+    # ===============================
     numeric_cols_for_scaling = scaler.feature_names_in_
     df_scaled = scaler.transform(df[numeric_cols_for_scaling])
     df[numeric_cols_for_scaling] = df_scaled
     mlflow.log_param("scaling_applied", True)
     print("✅ Scaling selesai.")
 
-    # === PCA Transformasi ===
+    # ===============================
+    # PCA Transformasi
+    # ===============================
     pca = load("preprocesing/prepocesing_pkl/pca_model.pkl")
     pca_input_cols = pca.feature_names_in_
     df_for_pca = df[pca_input_cols]
@@ -137,16 +147,14 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     mlflow.log_param("pca_components", pca.n_components_)
     print("✅ PCA transformasi diterapkan.")
 
-    # === Simpan Data Hasil Preprocessing ===
-    safe_output_dir = "outputs"
-    os.makedirs(safe_output_dir, exist_ok=True)
-
-    output_path = os.path.join(safe_output_dir, "netflix_preprocessing.csv")
-    print("🚧 Menyimpan CSV hasil preprocessing ke folder 'outputs'...")
+    # ===============================
+    # Save Final Preprocessed Data
+    # ===============================
+    output_path = "netflix_preprocessing.csv"
     df.to_csv(output_path, index=False)
-    print(f"✅ CSV berhasil disimpan di: {output_path}")
 
     mlflow.log_artifact(output_path)
     mlflow.log_param("output_file", output_path)
 
-    print("✅ Preprocessing selesai.")
+
+    print(f"✅ Preprocessing selesai. Data disimpan sebagai '{output_path}'")

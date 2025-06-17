@@ -25,10 +25,8 @@ jobs:
         run: |
           if [ -f preprocesing/requirements.txt ]; then pip install -r preprocesing/requirements.txt; fi
 
-      - name: Setup Output Directories
-        run: |
-          mkdir -p outputs
-          mkdir -p mlruns
+      - name: Setup MLflow Directory
+        run: mkdir -p mlruns
 
       - name: Run Preprocessing Script
         run: python preprocesing/automate_Mohammad-Nurdin-Prastya-Hermansah.py
@@ -37,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: preprocessed-dataset
-          path: outputs/netflix_preprocessing.csv
+          path: netflix_preprocessing.csv
 
       - name: Upload MLflow Logs
         uses: actions/upload-artifact@v4
