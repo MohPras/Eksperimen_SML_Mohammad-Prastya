@@ -30,7 +30,7 @@ jobs:
           echo "MLFLOW_TRACKING_URI=file:/tmp/mlruns" >> $GITHUB_ENV
 
       # --- DEBUGGING STEP: Verify File Paths ---
-      # Langkah ini akan membantu memastikan `netflix_preprocessing.csv` ada di lokasi yang diharapkan.
+      # Langkah ini membantu memastikan 'netflix_preprocessing.csv' ada di lokasi yang diharapkan.
       - name: Debug File Paths
         run: |
           echo "Current working directory: $(pwd)"
@@ -40,20 +40,20 @@ jobs:
             echo "SUCCESS: 'netflix_preprocessing.csv' found in Workflow-CI/MLproject/"
           else
             echo "ERROR: 'netflix_preprocessing.csv' NOT found in Workflow-CI/MLproject/. Please ensure it's there."
-            exit 1 # Fail if CSV is not found, as MLflow run will likely fail too
+            exit 1 # Gagal jika CSV tidak ditemukan, karena MLflow run kemungkinan akan gagal juga.
           fi
           echo "Contents of /tmp/mlruns/ (before MLflow run):"
           ls -l /tmp/mlruns/ || echo "mlruns directory not created yet."
 
       - name: Run MLflow Project
         # Menggunakan --param-list sesuai saran error sebelumnya.
-        # `working-directory` memastikan skrip Python menemukan `netflix_preprocessing.csv` di konteks yang benar.
+        # `working-directory` memastikan skrip Python menemukan 'netflix_preprocessing.csv' di konteks yang benar.
         run: |
           mlflow run . -e main --env-manager=local --param-list csv_url=netflix_preprocessing.csv
         working-directory: Workflow-CI/MLproject # Menjalankan perintah dari direktori ini
 
       # --- DEBUGGING STEP: Get latest MLflow run_id and Verify Artifacts ---
-      # Langkah ini akan secara ekstensif memeriksa keberadaan run_id dan direktori 'model'.
+      # Langkah ini secara ekstensif memeriksa keberadaan run_id dan direktori 'model'.
       - name: Get latest MLflow run_id and Verify Artifacts
         id: get_run_id
         run: |
@@ -65,11 +65,12 @@ jobs:
           ls -l /tmp/mlruns/0/
           
           echo "Searching for MLflow run directories in /tmp/mlruns/0/..."
-          # Mengambil run_id yang paling baru.
-          RUN_DIR=$(find /tmp/mlruns/0 -maxdepth 2 -type d -name "*-*" | sort | tail -n 1)
+          # PERBAIKAN PENTING: Mengambil direktori yang merupakan UUID (ID run) yang valid.
+          # Ini akan mengabaikan direktori 'models' atau lainnya yang bukan ID run utama.
+          RUN_DIR=$(find /tmp/mlruns/0 -maxdepth 1 -type d -regextype egrep -regex '.*/[0-9a-f]{32}' | sort | tail -n 1)
           
           if [ -z "$RUN_DIR" ]; then
-            echo "CRITICAL ERROR: No MLflow run directory found in /tmp/mlruns/0/. This indicates the MLflow project either failed to create a run, or the run directory structure is unexpected."
+            echo "CRITICAL ERROR: No MLflow run directory (UUID format) found in /tmp/mlruns/0/. This indicates the MLflow project either failed to create a run, or the run directory structure is unexpected."
             exit 1
           fi
           
