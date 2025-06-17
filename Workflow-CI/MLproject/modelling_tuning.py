@@ -43,7 +43,7 @@ def main(csv_url):
         'max_features': ['sqrt', 'log2']
     }
 
-    with mlflow.start_run(run_name="Modeling_Dengan_Tuning", nested=True):
+    with mlflow.start_run(run_name="Modeling_Dengan_Tuning"):
         rf = RandomForestClassifier(random_state=42)
 
         grid_search = GridSearchCV(
