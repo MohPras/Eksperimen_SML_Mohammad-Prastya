@@ -9,11 +9,8 @@ import os
 import sys
 
 # ========== MLflow Setup ==========
-# Mengatur MLflow tracking URI ke direktori /tmp/mlruns
-# Direktori /tmp/ selalu memiliki izin tulis dan bersih setiap sesi baru.
-mlflow.set_tracking_uri("file:///tmp/mlruns")
-
-# (Opsional) Tambahkan print untuk debugging di log GitHub Actions
+mlflow.set_tracking_uri("file:///tmp/mlruns") # github action
+# mlflow.set_tracking_uri("file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns") # lokal
 print(f"MLflow tracking URI diatur ke: {mlflow.get_tracking_uri()}")
 
 # Setel nama eksperimen
@@ -158,9 +155,8 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     # ===============================
     # Save Final Preprocessed Data
     # ===============================
-    # Gunakan jalur output yang jelas dan pasti di dalam direktori 'outputs'
     safe_output_dir = "outputs"
-    os.makedirs(safe_output_dir, exist_ok=True) # Pastikan folder output ada
+    os.makedirs(safe_output_dir, exist_ok=True)
 
     output_filename = "netflix_preprocessing.csv"
     output_path = os.path.join(safe_output_dir, output_filename)
@@ -169,8 +165,8 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     df.to_csv(output_path, index=False)
     print("✅ CSV berhasil disimpan!")
 
-    # Log artefak ini ke MLflow (JIKA ANDA INGIN MUNCUL DI MLFLOW UI)
-    mlflow.log_artifact(output_path) # Mengaktifkan kembali log_artifact
+    # Log artefak ini ke MLflow
+    mlflow.log_artifact(output_path)
     mlflow.log_param("output_file", output_path)
 
     print("✅ Preprocessing selesai.")

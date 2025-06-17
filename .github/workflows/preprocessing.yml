@@ -25,18 +25,12 @@ jobs:
         run: |
           if [ -f preprocesing/requirements.txt ]; then pip install -r preprocesing/requirements.txt; fi
 
-      # --- PERUBAHAN DI SINI ---
-      # Kita hanya perlu membuat direktori 'outputs' di sini
-      # karena MLflow sekarang akan menulis ke /tmp/mlruns (yang sudah ada dan writable)
       - name: Setup Output Directories
         run: |
           mkdir -p outputs
           # Baris 'mkdir -p mlruns' dihapus karena MLflow akan menulis ke /tmp/mlruns
 
       - name: Run Preprocessing Script
-        # --- PERUBAHAN DI SINI ---
-        # Bagian 'env:' untuk MLflow dihapus
-        # karena MLFLOW_TRACKING_URI sudah diatur di dalam skrip Python ke /tmp/mlruns
         run: python preprocesing/automate_Mohammad-Nurdin-Prastya-Hermansah.py
 
       - name: Upload Preprocessed Dataset
@@ -49,6 +43,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-logs
-          # --- PERUBAHAN PENTING DI SINI ---
-          # Path sekarang menunjuk ke lokasi log MLflow yang sebenarnya di /tmp/
           path: /tmp/mlruns/
