@@ -75,7 +75,15 @@ def main(csv_url):
         mlflow.log_metric("precision", precision)
         mlflow.log_metric("recall", recall)
         mlflow.log_metric("f1_score", f1)
-        mlflow.sklearn.log_model(best_model, "model", input_example=X_train[:5])
+        
+        # --- PERBAIKAN PENTING DI SINI ---
+        # Mengganti 'artifact_path' dengan 'name' untuk logging model.
+        mlflow.sklearn.log_model(
+            sk_model=best_model,
+            name="model",  # Menggunakan 'name' agar MLflow menyimpan model di 'artifacts/model/'
+            input_example=X_train[:5]
+        )
+        # --- AKHIR PERBAIKAN ---
 
         # Log confusion matrix dan classification report sebagai artifact
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt") as f:
