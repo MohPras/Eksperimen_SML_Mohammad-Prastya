@@ -29,58 +29,93 @@ jobs:
         run: |
           echo "MLFLOW_TRACKING_URI=file:/tmp/mlruns" >> $GITHUB_ENV
 
-      # --- DEBUGGING STEP FOR FILE PATHS ---
-      - name: Debug File Paths (Optional, for troubleshooting)
+      # --- DEBUGGING STEP: Verify File Paths ---
+      # Langkah ini akan membantu memastikan `netflix_preprocessing.csv` ada di lokasi yang diharapkan.
+      - name: Debug File Paths
         run: |
           echo "Current working directory: $(pwd)"
-          echo "Contents of Workflow-CI/MLproject:"
+          echo "Contents of Workflow-CI/MLproject/:"
           ls -l Workflow-CI/MLproject/
-          # Verify if netflix_preprocessing.csv is here
           if [ -f "Workflow-CI/MLproject/netflix_preprocessing.csv" ]; then
-            echo "netflix_preprocessing.csv found in Workflow-CI/MLproject/"
+            echo "SUCCESS: 'netflix_preprocessing.csv' found in Workflow-CI/MLproject/"
           else
-            echo "WARNING: netflix_preprocessing.csv NOT found in Workflow-CI/MLproject/"
+            echo "ERROR: 'netflix_preprocessing.csv' NOT found in Workflow-CI/MLproject/. Please ensure it's there."
+            exit 1 # Fail if CSV is not found, as MLflow run will likely fail too
           fi
           echo "Contents of /tmp/mlruns/ (before MLflow run):"
           ls -l /tmp/mlruns/ || echo "mlruns directory not created yet."
-        continue-on-error: true # Allow workflow to continue even if this step fails
 
       - name: Run MLflow Project
-        # Menggunakan --param-list (perbaikan dari error sebelumnya)
-        # Mengatur working-directory agar skrip Python bisa menemukan CSV
+        # Menggunakan --param-list sesuai saran error sebelumnya.
+        # `working-directory` memastikan skrip Python menemukan `netflix_preprocessing.csv` di konteks yang benar.
         run: |
           mlflow run . -e main --env-manager=local --param-list csv_url=netflix_preprocessing.csv
         working-directory: Workflow-CI/MLproject # Menjalankan perintah dari direktori ini
 
-      - name: Get latest MLflow run_id
+      # --- DEBUGGING STEP: Get latest MLflow run_id and Verify Artifacts ---
+      # Langkah ini akan secara ekstensif memeriksa keberadaan run_id dan direktori 'model'.
+      - name: Get latest MLflow run_id and Verify Artifacts
         id: get_run_id
         run: |
-          echo "Searching for MLflow run directories in /tmp/mlruns/0..."
-          find /tmp/mlruns/0 -type d -name "*-*" -print
+          echo "--- DEBUGGING MLflow RUN_ID AND ARTIFACTS ---"
+          echo "Listing contents of /tmp/mlruns/: (Should contain experiment 0)"
+          ls -l /tmp/mlruns/
           
-          # Pastikan RUN_DIR ditemukan
-          RUN_DIR=$(find /tmp/mlruns/0 -type d -name "*-*" | sort | tail -n 1)
+          echo "Listing contents of /tmp/mlruns/0/: (Expected experiment 0 runs)"
+          ls -l /tmp/mlruns/0/
+          
+          echo "Searching for MLflow run directories in /tmp/mlruns/0/..."
+          # Mengambil run_id yang paling baru.
+          RUN_DIR=$(find /tmp/mlruns/0 -maxdepth 2 -type d -name "*-*" | sort | tail -n 1)
+          
           if [ -z "$RUN_DIR" ]; then
-            echo "Error: No MLflow run directory found. MLflow run might have failed or not created any runs."
+            echo "CRITICAL ERROR: No MLflow run directory found in /tmp/mlruns/0/. This indicates the MLflow project either failed to create a run, or the run directory structure is unexpected."
             exit 1
           fi
           
           RUN_ID=$(basename "$RUN_DIR")
           
-          # Menambahkan echo untuk memastikan RUN_ID tertangkap
           echo "Discovered RUN_DIR: $RUN_DIR"
           echo "Discovered RUN_ID: $RUN_ID"
           
-          echo "MLflow run artifacts expected at: $RUN_DIR/artifacts"
-          # Tambahkan ini untuk melihat isi direktori artifacts
-          echo "Listing contents of artifacts directory:"
-          ls -R "$RUN_DIR/artifacts" || echo "Artifacts directory not found or empty."
-          
+          # Set the environment variable for subsequent steps
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+          # Set the output variable for this step (also makes it available globally)
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT 
+          
+          # VERIFIKASI KEBERADAAN ARTIFACTS DAN MODEL
+          EXPECTED_ARTIFACTS_DIR="$RUN_DIR/artifacts"
+          echo "Expected MLflow artifacts directory: $EXPECTED_ARTIFACTS_DIR"
+          
+          if [ -d "$EXPECTED_ARTIFACTS_DIR" ]; then
+            echo "SUCCESS: Artifacts directory FOUND. Listing its contents:"
+            ls -l "$EXPECTED_ARTIFACTS_DIR"
+            
+            # Cek apakah 'model' ada di dalam direktori artifacts
+            if [ -d "$EXPECTED_ARTIFACTS_DIR/model" ]; then
+              echo "SUCCESS: 'model' directory FOUND within artifacts. Listing its contents:"
+              ls -l "$EXPECTED_ARTIFACTS_DIR/model"
+              if [ "$(ls -A "$EXPECTED_ARTIFACTS_DIR/model")" ]; then
+                echo "INFO: 'model' directory is NOT empty. It contains files."
+              else
+                echo "WARNING: 'model' directory is EMPTY. Model logging might have failed internally."
+              fi
+            elif [ -f "$EXPECTED_ARTIFACTS_DIR/model" ]; then
+              echo "SUCCESS: 'model' file FOUND directly within artifacts."
+            else
+              echo "CRITICAL ERROR: 'model' directory or file NOT found within $EXPECTED_ARTIFACTS_DIR. The model was likely not logged or logged with a different name."
+              exit 1 # Gagal jika model tidak ditemukan
+            fi
+          else
+            echo "CRITICAL ERROR: Artifacts directory $EXPECTED_ARTIFACTS_DIR NOT found at all. MLflow run did not produce expected artifacts structure."
+            exit 1 # Gagal jika direktori artifacts tidak ada
+          fi
+          echo "--- END DEBUGGING MLflow RUN_ID AND ARTIFACTS ---"
 
       - name: Build Docker Image
+        # RUN_ID harus sudah tersetel dengan benar dari langkah sebelumnya.
         run: |
+          echo "Attempting to build Docker image using RUN_ID: $RUN_ID"
           mlflow models build-docker --model-uri "file:/tmp/mlruns/0/$RUN_ID/artifacts/model" --name "iot-model"
 
       - name: Log in to Docker Hub
