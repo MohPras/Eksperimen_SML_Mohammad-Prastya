@@ -31,13 +31,15 @@ jobs:
 
       - name: Run MLflow Project
         run: |
-          mlflow run Workflow-CI/MLproject --env-manager=local
+          mlflow run Workflow-CI/MLproject -e main --env-manager=local --param csv_url=netflix_preprocessing.csv
 
       - name: Get latest MLflow run_id
+        id: get_run_id
         run: |
-          RUN_ID=$(ls -td /tmp/mlruns/0/*/ | head -n 1 | cut -d'/' -f5)
+          RUN_DIR=$(find /tmp/mlruns/0 -type d -name "*-*" | sort | tail -n 1)
+          RUN_ID=$(basename "$RUN_DIR")
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
-          echo "Latest run_id: $RUN_ID"
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
       - name: Build Docker Image
         run: |
