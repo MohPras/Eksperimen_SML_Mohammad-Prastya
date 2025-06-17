@@ -1,123 +1,70 @@
-name: CI/CD MLflow
+name: Build & Push Model Docker Image
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch: # Memungkinkan untuk dipicu secara manual dari GitHub Actions UI
+    inputs:
+      mlflow_run_id:
+        description: 'MLflow Run ID of the model to deploy (e.g., from training workflow logs)'
+        required: true # Kita akan selalu butuh ID run yang spesifik
+        type: string
 
 jobs:
-  build:
+  build_and_push:
     runs-on: ubuntu-latest
 
+    # Variabel lingkungan untuk repositori artifacts kamu
+    env:
+      # Ini adalah lokasi di mana kamu menyimpan artifacts MLflow secara persisten.
+      # Sesuaikan dengan URL repositori 'mlflow-artifacts' kamu.
+      MLFLOW_ARTIFACTS_REPO_PATH: "mlflow-artifacts" # Nama folder lokal setelah clone
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Workflow Repository
+        uses: actions/checkout@v3
+
+      - name: Clone MLflow Artifacts Repository
+        run: |
+          # Konfigurasi Git untuk akses ke repositori privat (jika repo mlflow-artifacts privat)
+          git config --global user.email "ci-bot@github.com"
+          git config --global user.name "github-actions[bot]"
+          
+          # Clone repositori yang berisi log MLflow kamu.
+          # Sesuaikan URL dengan repositori 'mlflow-artifacts' kamu yang sebenarnya.
+          git clone https://x-access-token:${{ secrets.ARTIFACT_TOKEN }}@github.com/MohPras/mlflow-artifacts.git ${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}
+        env:
+          # Pastikan kamu telah mengatur ARTIFACT_TOKEN sebagai Secret di repositori ini.
+          # Token ini harus punya izin baca (read) ke repositori 'mlflow-artifacts'.
+          ARTIFACT_TOKEN: ${{ secrets.ARTIFACT_TOKEN }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
+      - name: Install MLflow
         run: |
           python -m pip install --upgrade pip
-          pip install mlflow pandas scikit-learn
+          pip install mlflow
 
-      - name: Set MLflow Tracking URI
+      - name: Set MLflow Tracking URI to Cloned Repo
         run: |
-          echo "MLFLOW_TRACKING_URI=file:/tmp/mlruns" >> $GITHUB_ENV
+          # Atur MLFLOW_TRACKING_URI ke direktori lokal hasil clone.
+          echo "MLFLOW_TRACKING_URI=${{ github.workspace }}/${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}" >> $GITHUB_ENV
+          echo "DEBUG: MLFLOW_TRACKING_URI set to: ${{ github.workspace }}/${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}"
 
-      # --- DEBUGGING STEP: Verify File Paths ---
-      # Langkah ini membantu memastikan 'netflix_preprocessing.csv' ada di lokasi yang diharapkan.
-      - name: Debug File Paths
+      - name: Debug MLflow Artifacts Structure
         run: |
-          echo "Current working directory: $(pwd)"
-          echo "Contents of Workflow-CI/MLproject/:"
-          ls -l Workflow-CI/MLproject/
-          if [ -f "Workflow-CI/MLproject/netflix_preprocessing.csv" ]; then
-            echo "SUCCESS: 'netflix_preprocessing.csv' found in Workflow-CI/MLproject/"
-          else
-            echo "ERROR: 'netflix_preprocessing.csv' NOT found in Workflow-CI/MLproject/. Please ensure it's there."
-            exit 1 # Gagal jika CSV tidak ditemukan, karena MLflow run kemungkinan akan gagal juga.
-          fi
-          echo "Contents of /tmp/mlruns/ (before MLflow run):"
-          ls -l /tmp/mlruns/ || echo "mlruns directory not created yet."
-
-      - name: Run MLflow Project
-        # Menggunakan --param-list sesuai saran error sebelumnya.
-        # `working-directory` memastikan skrip Python menemukan 'netflix_preprocessing.csv' di konteks yang benar.
-        run: |
-          mlflow run . -e main --env-manager=local --param-list csv_url=netflix_preprocessing.csv
-        working-directory: Workflow-CI/MLproject # Menjalankan perintah dari direktori ini
-
-      # --- DEBUGGING STEP: Get latest MLflow run_id and Verify Artifacts ---
-      # Langkah ini secara ekstensif memeriksa keberadaan run_id dan direktori 'model'.
-      - name: Get latest MLflow run_id and Verify Artifacts
-        id: get_run_id
-        run: |
-          echo "--- DEBUGGING MLflow RUN_ID AND ARTIFACTS ---"
-          echo "Listing contents of /tmp/mlruns/: (Should contain experiment 0)"
-          ls -l /tmp/mlruns/
-          
-          echo "Listing contents of /tmp/mlruns/0/: (Expected experiment 0 runs)"
-          ls -l /tmp/mlruns/0/
-          
-          echo "Searching for MLflow run directories in /tmp/mlruns/0/..."
-          # PERBAIKAN PENTING: Mengambil direktori yang merupakan UUID (ID run) yang valid.
-          # Ini akan mengabaikan direktori 'models' atau lainnya yang bukan ID run utama.
-          RUN_DIR=$(find /tmp/mlruns/0 -maxdepth 1 -type d -regextype egrep -regex '.*/[0-9a-f]{32}' | sort | tail -n 1)
-          
-          if [ -z "$RUN_DIR" ]; then
-            echo "CRITICAL ERROR: No MLflow run directory (UUID format) found in /tmp/mlruns/0/. This indicates the MLflow project either failed to create a run, or the run directory structure is unexpected."
-            exit 1
-          fi
-          
-          RUN_ID=$(basename "$RUN_DIR")
-          
-          echo "Discovered RUN_DIR: $RUN_DIR"
-          echo "Discovered RUN_ID: $RUN_ID"
-          
-          # Set the environment variable for subsequent steps
-          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
-          # Set the output variable for this step (also makes it available globally)
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT 
-          
-          # VERIFIKASI KEBERADAAN ARTIFACTS DAN MODEL
-          EXPECTED_ARTIFACTS_DIR="$RUN_DIR/artifacts"
-          echo "Expected MLflow artifacts directory: $EXPECTED_ARTIFACTS_DIR"
-          
-          if [ -d "$EXPECTED_ARTIFACTS_DIR" ]; then
-            echo "SUCCESS: Artifacts directory FOUND. Listing its contents:"
-            ls -l "$EXPECTED_ARTIFACTS_DIR"
-            
-            # Cek apakah 'model' ada di dalam direktori artifacts
-            if [ -d "$EXPECTED_ARTIFACTS_DIR/model" ]; then
-              echo "SUCCESS: 'model' directory FOUND within artifacts. Listing its contents:"
-              ls -l "$EXPECTED_ARTIFACTS_DIR/model"
-              if [ "$(ls -A "$EXPECTED_ARTIFACTS_DIR/model")" ]; then
-                echo "INFO: 'model' directory is NOT empty. It contains files."
-              else
-                echo "WARNING: 'model' directory is EMPTY. Model logging might have failed internally."
-              fi
-            elif [ -f "$EXPECTED_ARTIFACTS_DIR/model" ]; then
-              echo "SUCCESS: 'model' file FOUND directly within artifacts."
-            else
-              echo "CRITICAL ERROR: 'model' directory or file NOT found within $EXPECTED_ARTIFACTS_DIR. The model was likely not logged or logged with a different name."
-              exit 1 # Gagal jika model tidak ditemukan
-            fi
-          else
-            echo "CRITICAL ERROR: Artifacts directory $EXPECTED_ARTIFACTS_DIR NOT found at all. MLflow run did not produce expected artifacts structure."
-            exit 1 # Gagal jika direktori artifacts tidak ada
-          fi
-          echo "--- END DEBUGGING MLflow RUN_ID AND ARTIFACTS ---"
+          echo "Listing contents of cloned MLflow artifacts repo:"
+          ls -lR ${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}/0/${{ github.event.inputs.mlflow_run_id }}/artifacts/ || true
+          # '|| true' agar step tidak fail jika path belum ada (akan fail di step selanjutnya)
 
       - name: Build Docker Image
-        # RUN_ID harus sudah tersetel dengan benar dari langkah sebelumnya.
+        # Gunakan 'runs:/<run_id>/artifacts/model' untuk menunjuk model di dalam MLflow Tracking Server (repositori yang di-clone)
+        # Model URI akan menjadi relatif terhadap MLFLOW_TRACKING_URI
         run: |
-          echo "Attempting to build Docker image using RUN_ID: $RUN_ID"
-          mlflow models build-docker --model-uri "file:/tmp/mlruns/0/$RUN_ID/artifacts/model" --name "iot-model"
+          MODEL_URI="runs:/${{ github.event.inputs.mlflow_run_id }}/artifacts/model"
+          echo "DEBUG: Attempting to build Docker image from model URI: $MODEL_URI"
+          mlflow models build-docker --model-uri "$MODEL_URI" --name "iot-model"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
