@@ -25,17 +25,32 @@ jobs:
         run: |
           if [ -f preprocesing/requirements.txt ]; then pip install -r preprocesing/requirements.txt; fi
 
-      - name: Setup MLflow Directory
-        run: mkdir -p mlruns
+      # Membuat direktori 'outputs' dan 'mlruns' jika belum ada
+      # Ini penting untuk memastikan skrip punya tempat untuk menulis file
+      - name: Setup Output Directories
+        run: |
+          mkdir -p outputs
+          mkdir -p mlruns
 
       - name: Run Preprocessing Script
+        # ====== PERBAIKAN PENTING DI SINI =======
+        env:
+          # Ini memberitahu MLflow di mana menyimpan semua data pelacakan (metrik, parameter, dll.).
+          # Sangat penting untuk mencegah error permission.
+          MLFLOW_TRACKING_URI: 'file:./mlruns'
+          # Ini memberitahu MLflow di mana menyimpan artefak (file seperti dataset hasil preprocessing).
+          # Ini akan mengatasi masalah error '/Users' yang muncul saat log_artifact.
+          MLFLOW_ARTIFACT_URI: 'file:./mlruns' # Arahkan ke folder mlruns untuk penyimpanan artefak
+        # =========================================
         run: python preprocesing/automate_Mohammad-Nurdin-Prastya-Hermansah.py
 
       - name: Upload Preprocessed Dataset
         uses: actions/upload-artifact@v4
         with:
           name: preprocessed-dataset
-          path: netflix_preprocessing.csv
+          # Perhatikan: Sesuaikan path ini dengan tempat CSV Anda disimpan di skrip Python.
+          # Jika skrip Anda menyimpan di 'outputs/netflix_preprocessing.csv', sesuaikan di sini.
+          path: outputs/netflix_preprocessing.csv
 
       - name: Upload MLflow Logs
         uses: actions/upload-artifact@v4

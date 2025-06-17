@@ -8,8 +8,25 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-# mlflow.set_tracking_uri("file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns")
-mlflow.set_tracking_uri("mlruns")
+# ========== MLflow Setup ==========
+# Dapatkan direktori kerja saat ini di runner GitHub Actions.
+# Ini akan menjadi root dari repositori Anda setelah checkout.
+current_working_dir = os.getcwd()
+
+# Tentukan jalur absolut untuk folder mlruns
+mlruns_path = os.path.join(current_working_dir, "mlruns")
+
+# Pastikan direktori mlruns ada. Ini redundan jika sudah di YAML, tapi aman.
+os.makedirs(mlruns_path, exist_ok=True)
+
+# Setel MLflow tracking URI menggunakan jalur absolut.
+# Ini adalah metode paling eksplisit untuk mengarahkan MLflow.
+mlflow.set_tracking_uri(f"file:{mlruns_path}")
+
+# (Opsional) Tambahkan print untuk debugging di log GitHub Actions
+print(f"MLflow tracking URI diatur ke: {mlflow.get_tracking_uri()}")
+
+# Setel nama eksperimen
 mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
 
 # ===============================
@@ -85,6 +102,7 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     def load_pkl(path):
         return load(path)
 
+    # Pastikan jalur ke file PKL benar
     type_encoder = load_pkl("preprocesing/prepocesing_pkl/type_label_encoder.pkl")
     rating_encoder = load_pkl("preprocesing/prepocesing_pkl/rating_encoder.pkl")
     cluster_encoder = load_pkl("preprocesing/prepocesing_pkl/cluster_label_encoder.pkl")
@@ -118,7 +136,7 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     mlflow.log_param("outlier_handler_applied", True)
     mlflow.log_param("outlier_method", outlier_handler.method)
     mlflow.log_param("outlier_threshold", outlier_handler.threshold)
-    print("✅ Outlier handling diterapkan tanpa file .pkl.")
+    print("✅ Outlier handling diterapkan.") # Hapus 'tanpa file .pkl' jika sudah tidak relevan
 
     # ===============================
     # Scaling 
@@ -150,11 +168,19 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     # ===============================
     # Save Final Preprocessed Data
     # ===============================
-    output_path = "netflix_preprocessing.csv"
-    df.to_csv(output_path, index=False)
+    # Gunakan jalur output yang jelas dan pasti di dalam direktori 'outputs'
+    safe_output_dir = "outputs"
+    os.makedirs(safe_output_dir, exist_ok=True) # Pastikan folder output ada
 
+    output_filename = "netflix_preprocessing.csv"
+    output_path = os.path.join(safe_output_dir, output_filename)
+    
+    print(f"🚧 Menyimpan CSV hasil preprocessing ke: {output_path}...")
+    df.to_csv(output_path, index=False)
+    print("✅ CSV berhasil disimpan!")
+
+    # Log artefak ini ke MLflow
     mlflow.log_artifact(output_path)
     mlflow.log_param("output_file", output_path)
 
-
-    print(f"✅ Preprocessing selesai. Data disimpan sebagai '{output_path}'")
+    print("✅ Preprocessing selesai.")
