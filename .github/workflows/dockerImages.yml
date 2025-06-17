@@ -1,11 +1,14 @@
 name: Build & Push Model Docker Image
 
 on:
-  workflow_dispatch: # Memungkinkan untuk dipicu secara manual dari GitHub Actions UI
+  push:
+    branches:
+      - main # Ini akan memicu workflow setiap kali ada push ke branch 'main'
+  workflow_dispatch: # Tetap pertahankan ini jika kamu juga ingin bisa memicu manual
     inputs:
       mlflow_run_id:
         description: 'MLflow Run ID of the model to deploy (e.g., from training workflow logs)'
-        required: true # Kita akan selalu butuh ID run yang spesifik
+        required: false # Ubah ke false karena tidak selalu diperlukan untuk push
         type: string
 
 jobs:
@@ -52,17 +55,46 @@ jobs:
           echo "MLFLOW_TRACKING_URI=${{ github.workspace }}/${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}" >> $GITHUB_ENV
           echo "DEBUG: MLFLOW_TRACKING_URI set to: ${{ github.workspace }}/${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}"
 
+      - name: Determine MLflow Run ID
+        id: get_selected_run_id
+        run: |
+          RUN_ID=""
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.mlflow_run_id }}" ]]; then
+            # Jika dipicu manual dan input disediakan
+            RUN_ID="${{ github.event.inputs.mlflow_run_id }}"
+            echo "DEBUG: Using Run ID from manual input: $RUN_ID"
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            # Jika dipicu oleh push, cari RUN_ID terbaru dari repo artifacts
+            echo "DEBUG: Finding the latest MLflow Run ID from the cloned artifacts repository..."
+            # Asumsi: Setiap push ke main berarti ada run training baru yang sukses dan sudah di-push ke artifacts repo.
+            LATEST_RUN_ID=$(find ${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}/0 -maxdepth 1 -type d -regextype egrep -regex '.*/[0-9a-f]{32}' | sort | tail -n 1)
+            
+            if [ -z "$LATEST_RUN_ID" ]; then
+              echo "ERROR: Could not find a valid MLflow Run ID in the artifacts repository for automated push deployment."
+              exit 1
+            fi
+            RUN_ID=$(basename "$LATEST_RUN_ID") # Pastikan hanya ID, bukan full path
+            echo "DEBUG: Latest MLflow Run ID found for push trigger: $RUN_ID"
+          else
+            echo "ERROR: No valid MLflow Run ID provided or could not be determined for this trigger type."
+            exit 1
+          fi
+          echo "SELECTED_RUN_ID=$RUN_ID" >> $GITHUB_ENV # Set for subsequent steps
+
       - name: Debug MLflow Artifacts Structure
         run: |
-          echo "Listing contents of cloned MLflow artifacts repo:"
-          ls -lR ${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}/0/${{ github.event.inputs.mlflow_run_id }}/artifacts/ || true
-          # '|| true' agar step tidak fail jika path belum ada (akan fail di step selanjutnya)
+          echo "Listing contents of cloned MLflow artifacts repo for RUN_ID: ${{ env.SELECTED_RUN_ID }}"
+          # Pastikan SELECTED_RUN_ID tersedia sebelum mencoba ls
+          if [ -n "${{ env.SELECTED_RUN_ID }}" ]; then
+            ls -lR ${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}/0/${{ env.SELECTED_RUN_ID }}/artifacts/ || true
+          else
+            echo "WARNING: SELECTED_RUN_ID is empty, cannot list artifacts structure."
+          fi
 
       - name: Build Docker Image
-        # Gunakan 'runs:/<run_id>/artifacts/model' untuk menunjuk model di dalam MLflow Tracking Server (repositori yang di-clone)
-        # Model URI akan menjadi relatif terhadap MLFLOW_TRACKING_URI
         run: |
-          MODEL_URI="runs:/${{ github.event.inputs.mlflow_run_id }}/artifacts/model"
+          # Gunakan SELECTED_RUN_ID yang sudah ditentukan dari langkah sebelumnya
+          MODEL_URI="runs:/${{ env.SELECTED_RUN_ID }}/artifacts/model"
           echo "DEBUG: Attempting to build Docker image from model URI: $MODEL_URI"
           mlflow models build-docker --model-uri "$MODEL_URI" --name "iot-model"
 
