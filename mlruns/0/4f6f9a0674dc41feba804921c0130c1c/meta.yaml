@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns/0/4f6f9a0674dc41feba804921c0130c1c/artifacts
+end_time: 1750145187394
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 4f6f9a0674dc41feba804921c0130c1c
+run_name: Modeling_Dengan_Tuning
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750145144772
+status: 3
+tags: []
+user_id: promac

@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/Workflow-CI/MLproject/mlruns/0/f20b35de4ce243d4bfc5572492fc0dad/artifacts
+end_time: 1750148737859
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: f20b35de4ce243d4bfc5572492fc0dad
+run_name: rare-mare-478
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750148695326
+status: 3
+tags: []
+user_id: promac

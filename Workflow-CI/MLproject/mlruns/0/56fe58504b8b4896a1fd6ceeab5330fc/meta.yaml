@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/Workflow-CI/MLproject/mlruns/0/56fe58504b8b4896a1fd6ceeab5330fc/artifacts
+end_time: 1750148546843
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 56fe58504b8b4896a1fd6ceeab5330fc
+run_name: youthful-cod-381
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750148509148
+status: 4
+tags: []
+user_id: promac

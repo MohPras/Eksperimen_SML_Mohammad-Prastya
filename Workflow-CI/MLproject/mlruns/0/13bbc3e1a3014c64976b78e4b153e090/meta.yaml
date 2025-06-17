@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/Workflow-CI/MLproject/mlruns/0/13bbc3e1a3014c64976b78e4b153e090/artifacts
+end_time: 1750148423366
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 13bbc3e1a3014c64976b78e4b153e090
+run_name: grandiose-horse-93
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750148418224
+status: 4
+tags: []
+user_id: promac

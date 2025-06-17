@@ -1,0 +1,10 @@
+name: cs-mlflow
+
+conda_env: conda.yaml
+
+entry_points:
+  main:
+    parameters:
+      dataset: {type: str, default: "netflix_preprocessing.csv"}
+    command: >
+      python modelling_tuning.py --dataset {dataset}

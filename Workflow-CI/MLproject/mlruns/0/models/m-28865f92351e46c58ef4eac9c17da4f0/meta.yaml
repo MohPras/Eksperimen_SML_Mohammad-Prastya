@@ -1,0 +1,10 @@
+artifact_location: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/Workflow-CI/MLproject/mlruns/0/models/m-28865f92351e46c58ef4eac9c17da4f0/artifacts
+creation_timestamp: 1750148729262
+experiment_id: '0'
+last_updated_timestamp: 1750148736923
+model_id: m-28865f92351e46c58ef4eac9c17da4f0
+model_type: null
+name: model
+source_run_id: f20b35de4ce243d4bfc5572492fc0dad
+status: 2
+status_message: null

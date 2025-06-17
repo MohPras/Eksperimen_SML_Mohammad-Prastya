@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/Workflow-CI/MLproject/mlruns/0/4e165b5774d54812ad56e30897000c32/artifacts
+end_time: 1750148122725
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 4e165b5774d54812ad56e30897000c32
+run_name: upbeat-snail-588
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750148117565
+status: 4
+tags: []
+user_id: promac
