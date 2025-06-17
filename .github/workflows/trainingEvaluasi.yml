@@ -33,16 +33,14 @@ jobs:
           pip install mlflow
 
       - name: Set MLflow tracking URI
-        run: echo "MLFLOW_TRACKING_URI=file:outputs/mlruns" >> $GITHUB_ENV
+        run: echo "MLFLOW_TRACKING_URI=file:/tmp/mlruns" >> $GITHUB_ENV
 
       - name: Run MLflow Project
         run: |
           mlflow run Workflow-CI/MLproject --env-manager=local
 
-      - name: Commit and Push outputs folder
-        run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
-          git add outputs/
-          git commit -m "Update MLflow outputs artifacts [CI]" || echo "No changes to commit"
-          git push origin main
+      - name: Upload MLflow Logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-training-logs
+          path: /tmp/mlruns/
