@@ -1,14 +1,12 @@
-name: CI - Training Workflow
+name: CI
 
 on:
   push:
-    paths:
-      - 'Workflow-CI/MLproject/**'
-      - '.github/workflows/training.yml'
+    branches:
+      - main
   pull_request:
-    paths:
-      - 'Workflow-CI/MLproject/**'
-      - '.github/workflows/training.yml'
+    branches:
+      - main
 
 env:
   CSV_URL: "Workflow-CI/MLproject/netflix_preprocessing.csv"
