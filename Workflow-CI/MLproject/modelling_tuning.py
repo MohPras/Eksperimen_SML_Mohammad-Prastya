@@ -3,6 +3,7 @@ import mlflow
 import mlflow.sklearn
 import pandas as pd
 import os
+import tempfile
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import (
@@ -13,6 +14,9 @@ from sklearn.metrics import (
     confusion_matrix,
     classification_report
 )
+
+mlflow.set_tracking_uri("file:/tmp/mlruns")
+mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
 
 def main(csv_url):
     # Pastikan path absolut untuk CSV
@@ -67,6 +71,7 @@ def main(csv_url):
         conf_matrix = confusion_matrix(y_test, y_pred)
         report = classification_report(y_test, y_pred)
 
+        # Log ke MLflow
         mlflow.log_params(best_params)
         mlflow.log_metric("best_cv_score", best_cv_score)
         mlflow.log_metric("test_accuracy", accuracy)
@@ -75,6 +80,17 @@ def main(csv_url):
         mlflow.log_metric("f1_score", f1)
         mlflow.sklearn.log_model(best_model, "model", input_example=X_train[:5])
 
+        # Log confusion matrix dan classification report sebagai artifact
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt") as f:
+            f.write("Confusion Matrix:\n")
+            f.write(str(conf_matrix))
+            f.write("\n\nClassification Report:\n")
+            f.write(report)
+            report_path = f.name
+        
+        mlflow.log_artifact(report_path, artifact_path="reports")
+
+        # Console output
         print("Model RandomForestClassifier dengan Tuning digunakan.")
         print("Best Parameters:", best_params)
         print("Best CV Score:", best_cv_score)

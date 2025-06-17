@@ -1,5 +1,5 @@
 name: CI
- 
+
 on:
   push:
     branches:
@@ -7,56 +7,40 @@ on:
   pull_request:
     branches:
       - main
- 
+
 env:
   CSV_URL: "Workflow-CI/MLproject/netflix_preprocessing.csv"
- 
+
 jobs:
   build:
     runs-on: ubuntu-latest
- 
+
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE
-      - uses: actions/checkout@v3
- 
-      # Setup Python 3.12.7
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
       - name: Set up Python 3.12.7
         uses: actions/setup-python@v4
         with:
           python-version: "3.12.7"
-      
-      # Check Env Variables
+
       - name: Check Env
-        run: |
-          echo $CSV_URL
- 
-      # Install mlflow
+        run: echo $CSV_URL
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install mlflow
-      
-      # Run as a mlflow project
-      - name: Run mlflow project
+
+      - name: Set MLflow tracking URI
+        run: echo "MLFLOW_TRACKING_URI=file:/tmp/mlruns" >> $GITHUB_ENV
+
+      - name: Run MLflow Project
         run: |
-          mlflow run Workflow-CI/MLproject --env-manager=local 
- 
-      # Save models to GitHub Repository
-      - name: Set up Git LFS
-        run: |
-          git config --global user.name ${{ secrets.username }}
-          git config --global user.email ${{ secrets.email }}
-          git lfs install
-          git lfs track "mlruns/**"
-          git add .gitattributes
-          git commit -m "Track large files in mlruns with Git LFS" || true
-          git push origin main
-          
-      # Save models to GitHub Repository
-      - name: Save mlruns to repo
-        run: |
-          git config --global user.name ${{ secrets.username }}
-          git config --global user.email ${{ secrets.email }}
-          git add -f mlruns/
-          git commit -m "Save mlruns from CI run" || true
-          git push origin main
+          mlflow run Workflow-CI/MLproject --env-manager=local
+
+      - name: Upload MLflow Logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-training-logs
+          path: /tmp/mlruns/
