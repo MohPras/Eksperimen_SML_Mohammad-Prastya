@@ -1,19 +1,27 @@
 name: Build & Push Model Docker Image
 
 on:
-  push:
+  # Trigger otomatis setelah workflow 'CI Training & Evaluasi' selesai dengan sukses
+  workflow_run:
+    workflows: ["CI Training & Evaluasi"] # Nama persis dari workflow training kamu
+    types:
+      - completed # Terpicu saat workflow training selesai (baik sukses/gagal)
     branches:
-      - main # Ini akan memicu workflow setiap kali ada push ke branch 'main'
-  workflow_dispatch: # Tetap pertahankan ini jika kamu juga ingin bisa memicu manual
+      - main # Batasi agar hanya terpicu oleh training workflow di branch 'main'
+
+  # Trigger manual: Pertahankan ini jika kamu juga ingin bisa memicu manual dari UI GitHub Actions
+  workflow_dispatch:
     inputs:
       mlflow_run_id:
         description: 'MLflow Run ID of the model to deploy (e.g., from training workflow logs)'
-        required: false # Ubah ke false karena tidak selalu diperlukan untuk push
+        required: false # Tidak lagi 'required' karena otomatisasi tidak menyediakan ini
         type: string
 
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
+    # Pastikan workflow ini hanya berjalan jika workflow training sebelumnya berhasil
+    if: github.event.workflow_run.conclusion == 'success'
 
     # Variabel lingkungan untuk repositori artifacts kamu
     env:
@@ -63,40 +71,66 @@ jobs:
             # Jika dipicu manual dan input disediakan
             RUN_ID="${{ github.event.inputs.mlflow_run_id }}"
             echo "DEBUG: Using Run ID from manual input: $RUN_ID"
-          elif [[ "${{ github.event_name }}" == "push" ]]; then
-            # Jika dipicu oleh push, cari RUN_ID terbaru dari repo artifacts
-            echo "DEBUG: Finding the latest MLflow Run ID from the cloned artifacts repository..."
-            # Asumsi: Setiap push ke main berarti ada run training baru yang sukses dan sudah di-push ke artifacts repo.
+          elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            # Jika dipicu oleh workflow_run, cari RUN_ID terbaru dari repo artifacts
+            echo "DEBUG: Finding the latest MLflow Run ID from the cloned artifacts repository for workflow_run trigger..."
+            # Ini akan menemukan RUN_ID (UUID 32-karakter) dari experiment 0
+            # Asumsi: workflow training selalu push run_id terbaru ke sini.
             LATEST_RUN_ID=$(find ${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}/0 -maxdepth 1 -type d -regextype egrep -regex '.*/[0-9a-f]{32}' | sort | tail -n 1)
             
             if [ -z "$LATEST_RUN_ID" ]; then
-              echo "ERROR: Could not find a valid MLflow Run ID in the artifacts repository for automated push deployment."
+              echo "ERROR: Could not find a valid MLflow Run ID in the artifacts repository for automated deployment."
               exit 1
             fi
             RUN_ID=$(basename "$LATEST_RUN_ID") # Pastikan hanya ID, bukan full path
-            echo "DEBUG: Latest MLflow Run ID found for push trigger: $RUN_ID"
+            echo "DEBUG: Latest MLflow Run ID found for workflow_run trigger: $RUN_ID"
           else
-            echo "ERROR: No valid MLflow Run ID provided or could not be determined for this trigger type."
+            echo "ERROR: No valid MLflow Run ID provided or could not be determined for this trigger type. Ensure workflow_dispatch input or workflow_run trigger is configured correctly."
             exit 1
           fi
           echo "SELECTED_RUN_ID=$RUN_ID" >> $GITHUB_ENV # Set for subsequent steps
 
-      - name: Debug MLflow Artifacts Structure
+      - name: Download MLflow Model Locally
         run: |
-          echo "Listing contents of cloned MLflow artifacts repo for RUN_ID: ${{ env.SELECTED_RUN_ID }}"
-          # Pastikan SELECTED_RUN_ID tersedia sebelum mencoba ls
-          if [ -n "${{ env.SELECTED_RUN_ID }}" ]; then
-            ls -lR ${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}/0/${{ env.SELECTED_RUN_ID }}/artifacts/ || true
+          MLFLOW_MODELS_ROOT="${{ github.workspace }}/${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}/0/models"
+          echo "DEBUG: Checking MLflow Models Root Directory: $MLFLOW_MODELS_ROOT"
+
+          MODEL_ID_SUBDIR=$(find "$MLFLOW_MODELS_ROOT" -maxdepth 1 -type d -name "m-*" | sort | tail -n 1)
+
+          if [ -z "$MODEL_ID_SUBDIR" ]; then
+            echo "CRITICAL ERROR: No MLflow Model directory (m-xxxx) found in '$MLFLOW_MODELS_ROOT'."
+            echo "This indicates the model was not logged to the MLflow Model Registry or its structure is unexpected in training workflow."
+            exit 1
+          fi
+          
+          MODEL_SOURCE_LOCAL_DIR="$MODEL_ID_SUBDIR/artifacts"
+          LOCAL_DOWNLOAD_PATH="./downloaded_mlflow_model"
+          
+          echo "DEBUG: Detected model source local directory: $MODEL_SOURCE_LOCAL_DIR"
+          echo "DEBUG: Downloading contents of model artifacts to: $LOCAL_DOWNLOAD_PATH"
+
+          if [ ! -d "$MODEL_SOURCE_LOCAL_DIR" ]; then
+            echo "CRITICAL ERROR: Source model artifacts directory '$MODEL_SOURCE_LOCAL_DIR' does not exist."
+            exit 1
+          fi
+
+          mkdir -p "$LOCAL_DOWNLOAD_PATH"
+          cp -r "$MODEL_SOURCE_LOCAL_DIR"/* "$LOCAL_DOWNLOAD_PATH"/
+
+          echo "DEBUG: Contents of downloaded model directory (for Docker build):"
+          ls -lR "$LOCAL_DOWNLOAD_PATH"
+          
+          if [ -f "$LOCAL_DOWNLOAD_PATH/MLmodel" ]; then
+            echo "SUCCESS: 'MLmodel' file found in downloaded path. Ready for Docker build."
           else
-            echo "WARNING: SELECTED_RUN_ID is empty, cannot list artifacts structure."
+            echo "CRITICAL ERROR: 'MLmodel' file NOT found in downloaded path. Copy failed or model structure is incorrect after all."
+            exit 1
           fi
 
       - name: Build Docker Image
         run: |
-          # Gunakan SELECTED_RUN_ID yang sudah ditentukan dari langkah sebelumnya
-          MODEL_URI="runs:/${{ env.SELECTED_RUN_ID }}/artifacts/model"
-          echo "DEBUG: Attempting to build Docker image from model URI: $MODEL_URI"
-          mlflow models build-docker --model-uri "$MODEL_URI" --name "iot-model"
+          echo "DEBUG: Attempting to build Docker image from LOCAL model path: ./downloaded_mlflow_model"
+          mlflow models build-docker --model-uri "./downloaded_mlflow_model" --name "iot-model"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
