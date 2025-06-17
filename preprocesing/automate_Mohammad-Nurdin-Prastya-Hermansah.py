@@ -9,7 +9,7 @@ import os
 import sys
 
 # mlflow.set_tracking_uri("file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns")
-mlflow.set_tracking_uri("file:mlruns")
+mlflow.set_tracking_uri("mlruns")
 mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
 
 # ===============================
