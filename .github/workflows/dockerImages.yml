@@ -29,24 +29,52 @@ jobs:
         run: |
           echo "MLFLOW_TRACKING_URI=file:/tmp/mlruns" >> $GITHUB_ENV
 
-      - name: Run MLflow Project
+      # --- DEBUGGING STEP FOR FILE PATHS ---
+      - name: Debug File Paths (Optional, for troubleshooting)
         run: |
-          # Perbaikan di sini: Menggunakan --param-list sesuai saran error
-          mlflow run Workflow-CI/MLproject -e main --env-manager=local --param-list csv_url=netflix_preprocessing.csv
+          echo "Current working directory: $(pwd)"
+          echo "Contents of Workflow-CI/MLproject:"
+          ls -l Workflow-CI/MLproject/
+          # Verify if netflix_preprocessing.csv is here
+          if [ -f "Workflow-CI/MLproject/netflix_preprocessing.csv" ]; then
+            echo "netflix_preprocessing.csv found in Workflow-CI/MLproject/"
+          else
+            echo "WARNING: netflix_preprocessing.csv NOT found in Workflow-CI/MLproject/"
+          fi
+          echo "Contents of /tmp/mlruns/ (before MLflow run):"
+          ls -l /tmp/mlruns/ || echo "mlruns directory not created yet."
+        continue-on-error: true # Allow workflow to continue even if this step fails
+
+      - name: Run MLflow Project
+        # Menggunakan --param-list (perbaikan dari error sebelumnya)
+        # Mengatur working-directory agar skrip Python bisa menemukan CSV
+        run: |
+          mlflow run . -e main --env-manager=local --param-list csv_url=netflix_preprocessing.csv
+        working-directory: Workflow-CI/MLproject # Menjalankan perintah dari direktori ini
 
       - name: Get latest MLflow run_id
         id: get_run_id
         run: |
-          # Menambahkan debugging untuk melihat direktori yang ditemukan
           echo "Searching for MLflow run directories in /tmp/mlruns/0..."
           find /tmp/mlruns/0 -type d -name "*-*" -print
           
+          # Pastikan RUN_DIR ditemukan
           RUN_DIR=$(find /tmp/mlruns/0 -type d -name "*-*" | sort | tail -n 1)
+          if [ -z "$RUN_DIR" ]; then
+            echo "Error: No MLflow run directory found. MLflow run might have failed or not created any runs."
+            exit 1
+          fi
+          
           RUN_ID=$(basename "$RUN_DIR")
           
           # Menambahkan echo untuk memastikan RUN_ID tertangkap
           echo "Discovered RUN_DIR: $RUN_DIR"
           echo "Discovered RUN_ID: $RUN_ID"
+          
+          echo "MLflow run artifacts expected at: $RUN_DIR/artifacts"
+          # Tambahkan ini untuk melihat isi direktori artifacts
+          echo "Listing contents of artifacts directory:"
+          ls -R "$RUN_DIR/artifacts" || echo "Artifacts directory not found or empty."
           
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
