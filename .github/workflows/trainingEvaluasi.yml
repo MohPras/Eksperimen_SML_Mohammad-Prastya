@@ -39,8 +39,24 @@ jobs:
         run: |
           mlflow run Workflow-CI/MLproject --env-manager=local
 
-      - name: Upload MLflow Logs
+      - name: Upload MLflow Logs as Artifact (Optional)
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-training-logs
           path: /tmp/mlruns/
+
+      - name: Push MLflow logs to mlflow-artifacts repository
+        run: |
+          git config --global user.email "ci-bot@github.com"
+          git config --global user.name "github-actions[bot]"
+
+          # Clone target repo
+          git clone https://x-access-token:${{ secrets.ARTIFACT_TOKEN }}@github.com/MohPras/mlflow-artifacts.git
+          
+          # Copy MLflow logs ke repo artifacts
+          cp -r /tmp/mlruns/* mlflow-artifacts/
+
+          cd mlflow-artifacts
+          git add .
+          git commit -m "MLflow logs from CI $(date +'%Y-%m-%d %H:%M:%S')"
+          git push origin main
