@@ -9,19 +9,9 @@ import os
 import sys
 
 # ========== MLflow Setup ==========
-# Dapatkan direktori kerja saat ini di runner GitHub Actions.
-# Ini akan menjadi root dari repositori Anda setelah checkout.
-current_working_dir = os.getcwd()
-
-# Tentukan jalur absolut untuk folder mlruns
-mlruns_path = os.path.join(current_working_dir, "mlruns")
-
-# Pastikan direktori mlruns ada. Ini redundan jika sudah di YAML, tapi aman.
-os.makedirs(mlruns_path, exist_ok=True)
-
-# Setel MLflow tracking URI menggunakan jalur absolut.
-# Ini adalah metode paling eksplisit untuk mengarahkan MLflow.
-mlflow.set_tracking_uri(f"file:{mlruns_path}")
+# Mengatur MLflow tracking URI ke direktori /tmp/mlruns
+# Direktori /tmp/ selalu memiliki izin tulis dan bersih setiap sesi baru.
+mlflow.set_tracking_uri("file:///tmp/mlruns")
 
 # (Opsional) Tambahkan print untuk debugging di log GitHub Actions
 print(f"MLflow tracking URI diatur ke: {mlflow.get_tracking_uri()}")
@@ -136,7 +126,7 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     mlflow.log_param("outlier_handler_applied", True)
     mlflow.log_param("outlier_method", outlier_handler.method)
     mlflow.log_param("outlier_threshold", outlier_handler.threshold)
-    print("✅ Outlier handling diterapkan.") # Hapus 'tanpa file .pkl' jika sudah tidak relevan
+    print("✅ Outlier handling diterapkan.")
 
     # ===============================
     # Scaling 
@@ -179,8 +169,8 @@ with mlflow.start_run(run_name="Preprocessing Otomatis"):
     df.to_csv(output_path, index=False)
     print("✅ CSV berhasil disimpan!")
 
-    # Log artefak ini ke MLflow
-    # mlflow.log_artifact(output_path)
+    # Log artefak ini ke MLflow (JIKA ANDA INGIN MUNCUL DI MLFLOW UI)
+    mlflow.log_artifact(output_path) # Mengaktifkan kembali log_artifact
     mlflow.log_param("output_file", output_path)
 
     print("✅ Preprocessing selesai.")

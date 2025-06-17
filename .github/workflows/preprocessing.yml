@@ -25,35 +25,30 @@ jobs:
         run: |
           if [ -f preprocesing/requirements.txt ]; then pip install -r preprocesing/requirements.txt; fi
 
-      # Membuat direktori 'outputs' dan 'mlruns' jika belum ada
-      # Ini penting untuk memastikan skrip punya tempat untuk menulis file
+      # --- PERUBAHAN DI SINI ---
+      # Kita hanya perlu membuat direktori 'outputs' di sini
+      # karena MLflow sekarang akan menulis ke /tmp/mlruns (yang sudah ada dan writable)
       - name: Setup Output Directories
         run: |
           mkdir -p outputs
-          mkdir -p mlruns
+          # Baris 'mkdir -p mlruns' dihapus karena MLflow akan menulis ke /tmp/mlruns
 
       - name: Run Preprocessing Script
-        # ====== PERBAIKAN PENTING DI SINI =======
-        env:
-          # Ini memberitahu MLflow di mana menyimpan semua data pelacakan (metrik, parameter, dll.).
-          # Sangat penting untuk mencegah error permission.
-          MLFLOW_TRACKING_URI: 'file:./mlruns'
-          # Ini memberitahu MLflow di mana menyimpan artefak (file seperti dataset hasil preprocessing).
-          # Ini akan mengatasi masalah error '/Users' yang muncul saat log_artifact.
-          MLFLOW_ARTIFACT_URI: 'file:./mlruns' # Arahkan ke folder mlruns untuk penyimpanan artefak
-        # =========================================
+        # --- PERUBAHAN DI SINI ---
+        # Bagian 'env:' untuk MLflow dihapus
+        # karena MLFLOW_TRACKING_URI sudah diatur di dalam skrip Python ke /tmp/mlruns
         run: python preprocesing/automate_Mohammad-Nurdin-Prastya-Hermansah.py
 
       - name: Upload Preprocessed Dataset
         uses: actions/upload-artifact@v4
         with:
           name: preprocessed-dataset
-          # Perhatikan: Sesuaikan path ini dengan tempat CSV Anda disimpan di skrip Python.
-          # Jika skrip Anda menyimpan di 'outputs/netflix_preprocessing.csv', sesuaikan di sini.
           path: outputs/netflix_preprocessing.csv
 
       - name: Upload MLflow Logs
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-logs
-          path: mlruns
+          # --- PERUBAHAN PENTING DI SINI ---
+          # Path sekarang menunjuk ke lokasi log MLflow yang sebenarnya di /tmp/
+          path: /tmp/mlruns/
