@@ -31,13 +31,23 @@ jobs:
 
       - name: Run MLflow Project
         run: |
-          mlflow run Workflow-CI/MLproject -e main --env-manager=local --param csv_url=netflix_preprocessing.csv
+          # Perbaikan di sini: Menggunakan --param-list sesuai saran error
+          mlflow run Workflow-CI/MLproject -e main --env-manager=local --param-list csv_url=netflix_preprocessing.csv
 
       - name: Get latest MLflow run_id
         id: get_run_id
         run: |
+          # Menambahkan debugging untuk melihat direktori yang ditemukan
+          echo "Searching for MLflow run directories in /tmp/mlruns/0..."
+          find /tmp/mlruns/0 -type d -name "*-*" -print
+          
           RUN_DIR=$(find /tmp/mlruns/0 -type d -name "*-*" | sort | tail -n 1)
           RUN_ID=$(basename "$RUN_DIR")
+          
+          # Menambahkan echo untuk memastikan RUN_ID tertangkap
+          echo "Discovered RUN_DIR: $RUN_DIR"
+          echo "Discovered RUN_ID: $RUN_ID"
+          
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
