@@ -2,6 +2,7 @@ import argparse
 import mlflow
 import mlflow.sklearn
 import pandas as pd
+import os
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import (
@@ -14,8 +15,11 @@ from sklearn.metrics import (
 )
 
 def main(csv_url):
-    # Load dan persiapkan data
-    data_filter = pd.read_csv(csv_url)
+    # Pastikan path absolut untuk CSV
+    csv_path = os.path.abspath(csv_url)
+    
+    # Load data
+    data_filter = pd.read_csv(csv_path)
 
     # Pisahkan fitur dan target
     X = data_filter.drop(columns=['cluster'])
