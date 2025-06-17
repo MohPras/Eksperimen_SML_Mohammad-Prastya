@@ -37,21 +37,23 @@ jobs:
           name: preprocessed-dataset
           path: outputs/netflix_preprocessing.csv
 
-      - name: Upload MLflow Logs
+      - name: Upload MLflow Logs (if exist)
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-logs
           path: /tmp/mlruns/
+        continue-on-error: true
 
       - name: Push Preprocessed Dataset to Artifact Repo
         run: |
-          git config --global user.email "you@example.com"
-          git config --global user.name "your-username"
+          git config --global user.email "ci-bot@github.com"
+          git config --global user.name "github-actions[bot]"
 
           git clone https://x-access-token:${{ secrets.ARTIFACTS_PAT }}@github.com/MohPras/mlflow-artifacts.git
           cp outputs/netflix_preprocessing.csv mlflow-artifacts/
 
           cd mlflow-artifacts
           git add netflix_preprocessing.csv
-          git commit -m "Update preprocessed dataset"
-          git push
+          git commit -m "Update preprocessed dataset on $(date +'%Y-%m-%d %H:%M:%S')"
+          git push origin main
