@@ -16,13 +16,13 @@ from sklearn.metrics import (
 )
 
 def main(csv_url):
-    # Pastikan path absolut untuk CSV
+    # Ensure absolute path for CSV
     csv_path = os.path.abspath(csv_url)
 
     # Load data
     data_filter = pd.read_csv(csv_path)
 
-    # Pisahkan fitur dan target
+    # Separate features and target
     X = data_filter.drop(columns=['cluster'])
     y = data_filter['cluster']
 
@@ -68,7 +68,7 @@ def main(csv_url):
         conf_matrix = confusion_matrix(y_test, y_pred)
         report = classification_report(y_test, y_pred)
 
-        # Log ke MLflow
+        # Log to MLflow
         mlflow.log_params(best_params)
         mlflow.log_metric("best_cv_score", best_cv_score)
         mlflow.log_metric("test_accuracy", accuracy)
@@ -76,16 +76,17 @@ def main(csv_url):
         mlflow.log_metric("recall", recall)
         mlflow.log_metric("f1_score", f1)
         
-        # --- PERBAIKAN PENTING DI SINI ---
-        # Mengganti 'artifact_path' dengan 'name' untuk logging model.
+        # --- CRITICAL FIX HERE ---
+        # Replaced 'artifact_path' with 'name' for model logging.
+        # This ensures MLflow saves the model to 'artifacts/model/' correctly.
         mlflow.sklearn.log_model(
             sk_model=best_model,
-            name="model",  # Menggunakan 'name' agar MLflow menyimpan model di 'artifacts/model/'
+            name="model",  # Use 'name' parameter
             input_example=X_train[:5]
         )
-        # --- AKHIR PERBAIKAN ---
+        # --- END OF CRITICAL FIX ---
 
-        # Log confusion matrix dan classification report sebagai artifact
+        # Log confusion matrix and classification report as artifact
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt") as f:
             f.write("Confusion Matrix:\n")
             f.write(str(conf_matrix))
@@ -96,7 +97,7 @@ def main(csv_url):
         mlflow.log_artifact(report_path, artifact_path="reports")
 
         # Console output
-        print("Model RandomForestClassifier dengan Tuning digunakan.")
+        print("Model RandomForestClassifier with Tuning used.")
         print("Best Parameters:", best_params)
         print("Best CV Score:", best_cv_score)
         print("Test Accuracy:", accuracy)
