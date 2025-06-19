@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/610606018132532471/5e65d1dd08884175b83bfc497ca0fb18/artifacts
+end_time: 1750365229380
+entry_point_name: ''
+experiment_id: '610606018132532471'
+lifecycle_stage: active
+run_id: 5e65d1dd08884175b83bfc497ca0fb18
+run_name: puzzled-loon-228
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750365178311
+status: 3
+tags: []
+user_id: promac

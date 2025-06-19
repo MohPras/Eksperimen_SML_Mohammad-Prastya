@@ -12,12 +12,13 @@ from sklearn.metrics import (
     classification_report
 )
 
-# Inisialisasi MLflow
-mlflow.set_tracking_uri("file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns")
+# Inisialisasi MLflow ke localhost (Tracking UI)
+mlflow.set_tracking_uri("http://127.0.0.1:5000")
 mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
+mlflow.autolog()  # ✅ Autolog aktif, tanpa manual log
 
 # Load data
-data_filter = pd.read_csv("outputs/netflix_preprocessing.csv")
+data_filter = pd.read_csv("preprocesing/netflix_preprocessing.csv")
 
 # Pisahkan fitur dan target
 X = data_filter.drop(columns=['cluster'])
@@ -33,16 +34,13 @@ print(f"Test set shape: X_test={X_test.shape}, y_test={y_test.shape}")
 
 # Jalankan MLflow
 with mlflow.start_run(run_name="Modeling_Tanpa_Tuning"):
-    # Inisialisasi model RandomForest dengan parameter default
+    # Inisialisasi dan latih model
     rf = RandomForestClassifier(random_state=42)
-
-    # Latih model
     rf.fit(X_train, y_train)
 
-    # Prediksi
+    # Prediksi & evaluasi
     y_pred = rf.predict(X_test)
 
-    # Evaluasi komplit
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred, average='weighted')
     recall = recall_score(y_test, y_pred, average='weighted')
@@ -50,14 +48,7 @@ with mlflow.start_run(run_name="Modeling_Tanpa_Tuning"):
     conf_matrix = confusion_matrix(y_test, y_pred)
     report = classification_report(y_test, y_pred)
 
-    # Logging MLflow
-    mlflow.log_param("model_type", "RandomForest_default")
-    mlflow.log_metric("test_accuracy", accuracy)
-    mlflow.log_metric("precision", precision)
-    mlflow.log_metric("recall", recall)
-    mlflow.log_metric("f1_score", f1)
-    mlflow.sklearn.log_model(rf, "rf_cluster_model_default", input_example=X_train[:5])
-
+    # Tampilkan hasil (logging otomatis oleh autolog)
     print("Model Default RandomForestClassifier digunakan.")
     print("Test Accuracy:", accuracy)
     print("Precision:", precision)

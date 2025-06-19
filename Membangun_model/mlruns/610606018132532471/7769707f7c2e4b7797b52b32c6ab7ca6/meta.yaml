@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/610606018132532471/7769707f7c2e4b7797b52b32c6ab7ca6/artifacts
+end_time: 1750365229809
+entry_point_name: ''
+experiment_id: '610606018132532471'
+lifecycle_stage: active
+run_id: 7769707f7c2e4b7797b52b32c6ab7ca6
+run_name: Modeling_Dengan_Tuning
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750365178311
+status: 3
+tags: []
+user_id: promac

@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/610606018132532471/a87fb6a9918d46329df06f45de9e4c62/artifacts
+end_time: 1750365229380
+entry_point_name: ''
+experiment_id: '610606018132532471'
+lifecycle_stage: active
+run_id: a87fb6a9918d46329df06f45de9e4c62
+run_name: receptive-shrike-925
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750365178311
+status: 3
+tags: []
+user_id: promac

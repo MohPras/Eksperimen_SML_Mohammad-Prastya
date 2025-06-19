@@ -1,20 +1,11 @@
 import pandas as pd
 import numpy as np
-import mlflow
 from joblib import load
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from sklearn.base import BaseEstimator, TransformerMixin
 import matplotlib.pyplot as plt
 import os
 import sys
-
-# ========== MLflow Setup ==========
-mlflow.set_tracking_uri("file:///tmp/mlruns") # github action
-# mlflow.set_tracking_uri("file:///Users/promac/Documents/01_AI_MATERI/01_PROJEK/Eksperimen_SML_MohammadPrastya/mlruns") # lokal
-print(f"MLflow tracking URI diatur ke: {mlflow.get_tracking_uri()}")
-
-# Setel nama eksperimen
-mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
 
 # ===============================
 # DEFINISI CLASS OutlierHandler
@@ -38,135 +29,114 @@ class OutlierHandler(BaseEstimator, TransformerMixin):
         return X
 
 # ===============================
-# Mulai MLflow Run Utama
+# Load Dataset
 # ===============================
-with mlflow.start_run(run_name="Preprocessing Otomatis"):
+df = pd.read_csv("netflix_raw/Genre_netflix.csv")
+print("✅ Dataset dimuat.")
+print(f"📊 Jumlah baris: {len(df)}, Kolom: {len(df.columns)}")
 
-    # ===============================
-    # Load Dataset
-    # ===============================
-    df = pd.read_csv("netflix_raw/Genre_netflix.csv")
-    mlflow.log_param("input_file", "Genre_netflix.csv")
-    mlflow.log_metric("original_rows", len(df))
-    mlflow.log_metric("original_columns", len(df.columns))
+# ===============================
+# Extract Duration
+# ===============================
+def extract_duration_numeric(df):
+    df['duration_numeric'] = df['duration'].str.extract(r'(\d+)').astype(float)
+    print(f"ℹ️ Jumlah nilai NaN di 'duration_numeric': {df['duration_numeric'].isna().sum()}")
+    df.drop(columns=['duration'], inplace=True)
+    print("✅ Durasi berhasil diekstrak.")
+    return df
 
-    # ===============================
-    # Extract Duration
-    # ===============================
-    def extract_duration_numeric(df):
-        df['duration_numeric'] = df['duration'].str.extract(r'(\d+)').astype(float)
-        mlflow.log_param("duration_extraction", "regex_digits")
-        mlflow.log_metric("duration_missing_values", df['duration_numeric'].isna().sum())
-        df.drop(columns=['duration'], inplace=True)
-        print("✅ Durasi berhasil diekstrak.")
-        return df
+df = extract_duration_numeric(df)
 
-    df = extract_duration_numeric(df)
-    
-    # ===============================
-    # Delete Kolom
-    # ===============================
-    df.drop(['Unnamed: 0', 'title'], axis=1, inplace=True)
+# ===============================
+# Delete Kolom
+# ===============================
+df.drop(['Unnamed: 0', 'title'], axis=1, inplace=True)
+print("✅ Kolom 'Unnamed: 0' dan 'title' dihapus.")
 
-    # ===============================
-    # Convert date_added to datetime
-    # ===============================
-    def process_date_column(df, column='date_added'):
-        df[column] = df[column].astype(str).str.strip()
-        df[column] = pd.to_datetime(df[column], format='%B %d, %Y', errors='coerce')
-        df['year'] = df[column].dt.year
-        df['month'] = df[column].dt.month
-        df['day'] = df[column].dt.day
-        df.drop(columns=[column], inplace=True)
-        print("✅ Kolom date_added berhasil dikonversi ke datetime.")
-        return df
+# ===============================
+# Convert date_added to datetime
+# ===============================
+def process_date_column(df, column='date_added'):
+    df[column] = df[column].astype(str).str.strip()
+    df[column] = pd.to_datetime(df[column], format='%B %d, %Y', errors='coerce')
+    df['year'] = df[column].dt.year
+    df['month'] = df[column].dt.month
+    df['day'] = df[column].dt.day
+    df.drop(columns=[column], inplace=True)
+    print("✅ Kolom 'date_added' berhasil dikonversi ke datetime.")
+    return df
 
-    df = process_date_column(df)
+df = process_date_column(df)
 
-    # ===============================
-    # Load Encoder & Scaler (pkl)
-    # ===============================
-    def load_pkl(path):
-        return load(path)
+# ===============================
+# Load Encoder & Scaler (pkl)
+# ===============================
+def load_pkl(path):
+    return load(path)
 
-    # Pastikan jalur ke file PKL benar
-    type_encoder = load_pkl("preprocesing/prepocesing_pkl/type_label_encoder.pkl")
-    rating_encoder = load_pkl("preprocesing/prepocesing_pkl/rating_encoder.pkl")
-    cluster_encoder = load_pkl("preprocesing/prepocesing_pkl/cluster_label_encoder.pkl")
-    country_encoder = load_pkl("preprocesing/prepocesing_pkl/country_binary_encoder.pkl")
-    listedin_encoder = load_pkl("preprocesing/prepocesing_pkl/listedin_binary_encoder.pkl")
-    scaler = load_pkl("preprocesing/prepocesing_pkl/minmax_scaler.pkl")
+type_encoder = load_pkl("preprocesing/prepocesing_pkl/type_label_encoder.pkl")
+rating_encoder = load_pkl("preprocesing/prepocesing_pkl/rating_encoder.pkl")
+cluster_encoder = load_pkl("preprocesing/prepocesing_pkl/cluster_label_encoder.pkl")
+country_encoder = load_pkl("preprocesing/prepocesing_pkl/country_binary_encoder.pkl")
+listedin_encoder = load_pkl("preprocesing/prepocesing_pkl/listedin_binary_encoder.pkl")
+scaler = load_pkl("preprocesing/prepocesing_pkl/minmax_scaler.pkl")
+print("✅ Semua encoder dan scaler berhasil dimuat.")
 
-    mlflow.log_param("encoder_loaded", True)
+# ===============================
+# Apply Encoders
+# ===============================
+df['type'] = type_encoder.transform(df['type'])
+df['rating'] = rating_encoder.transform(df[['rating']]).ravel()
+df['cluster'] = cluster_encoder.transform(df['cluster'])
 
-    # ===============================
-    # Apply Encoders
-    # ===============================
-    df['type'] = type_encoder.transform(df['type'])
-    df['rating'] = rating_encoder.transform(df[['rating']]).ravel()
-    df['cluster'] = cluster_encoder.transform(df['cluster'])
+country_encoded = country_encoder.transform(df[['country']])
+listedin_encoded = listedin_encoder.transform(df[['listed_in']])
+df.drop(columns=['country', 'listed_in'], inplace=True)
+df = pd.concat([df, country_encoded, listedin_encoded], axis=1)
+print("✅ Label encoding & binary encoding diterapkan.")
 
-    country_encoded = country_encoder.transform(df[['country']])
-    listedin_encoded = listedin_encoder.transform(df[['listed_in']])
-    df.drop(columns=['country', 'listed_in'], inplace=True)
-    df = pd.concat([df, country_encoded, listedin_encoded], axis=1)
-    print("✅ Label encoding & binary encoding diterapkan.")
+# ===============================
+# Handle Outliers
+# ===============================
+df_numeric = df.select_dtypes(include='number')
+outlier_handler = OutlierHandler(method="zscore", threshold=3)
+outlier_handler.fit(df_numeric)
+df_cleaned = outlier_handler.transform(df_numeric)
+df[df_numeric.columns] = df_cleaned
+print("✅ Outlier handling diterapkan menggunakan Z-score.")
 
-    # ===============================
-    # Handle Outliers
-    # ===============================
-    df_numeric = df.select_dtypes(include='number')
-    outlier_handler = OutlierHandler(method="zscore", threshold=3)
-    outlier_handler.fit(df_numeric)
-    df_cleaned = outlier_handler.transform(df_numeric)
-    df[df_numeric.columns] = df_cleaned
-    mlflow.log_param("outlier_handler_applied", True)
-    mlflow.log_param("outlier_method", outlier_handler.method)
-    mlflow.log_param("outlier_threshold", outlier_handler.threshold)
-    print("✅ Outlier handling diterapkan.")
+# ===============================
+# Scaling 
+# ===============================
+numeric_cols_for_scaling = scaler.feature_names_in_
+df_scaled = scaler.transform(df[numeric_cols_for_scaling])
+df[numeric_cols_for_scaling] = df_scaled
+print("✅ Scaling selesai menggunakan MinMaxScaler.")
 
-    # ===============================
-    # Scaling 
-    # ===============================
-    numeric_cols_for_scaling = scaler.feature_names_in_
-    df_scaled = scaler.transform(df[numeric_cols_for_scaling])
-    df[numeric_cols_for_scaling] = df_scaled
-    mlflow.log_param("scaling_applied", True)
-    print("✅ Scaling selesai.")
+# ===============================
+# PCA Transformasi
+# ===============================
+pca = load("preprocesing/prepocesing_pkl/pca_model.pkl")
+pca_input_cols = pca.feature_names_in_
+df_for_pca = df[pca_input_cols]
+df_pca = pca.transform(df_for_pca)
 
-    # ===============================
-    # PCA Transformasi
-    # ===============================
-    pca = load("preprocesing/prepocesing_pkl/pca_model.pkl")
-    pca_input_cols = pca.feature_names_in_
-    df_for_pca = df[pca_input_cols]
-    df_pca = pca.transform(df_for_pca)
+pca_columns = [f'PC{i+1}' for i in range(df_pca.shape[1])]
+df_pca = pd.DataFrame(df_pca, columns=pca_columns, index=df.index)
 
-    pca_columns = [f'PC{i+1}' for i in range(df_pca.shape[1])]
-    df_pca = pd.DataFrame(df_pca, columns=pca_columns, index=df.index)
+df.drop(columns=pca_input_cols, inplace=True)
+df = pd.concat([df, df_pca], axis=1)
+print(f"✅ PCA transformasi diterapkan. Komponen: {pca.n_components_}")
 
-    df.drop(columns=pca_input_cols, inplace=True)
-    df = pd.concat([df, df_pca], axis=1)
+# ===============================
+# Save Final Preprocessed Data
+# ===============================
+output_dir = "preprocesing"
+os.makedirs(output_dir, exist_ok=True)
 
-    mlflow.log_param("pca_applied", True)
-    mlflow.log_param("pca_components", pca.n_components_)
-    print("✅ PCA transformasi diterapkan.")
+output_filename = "netflix_preprocessing.csv"
+output_path = os.path.join(output_dir, output_filename)
 
-    # ===============================
-    # Save Final Preprocessed Data
-    # ===============================
-    safe_output_dir = "outputs"
-    os.makedirs(safe_output_dir, exist_ok=True)
-
-    output_filename = "netflix_preprocessing.csv"
-    output_path = os.path.join(safe_output_dir, output_filename)
-    
-    print(f"🚧 Menyimpan CSV hasil preprocessing ke: {output_path}...")
-    df.to_csv(output_path, index=False)
-    print("✅ CSV berhasil disimpan!")
-
-    # Log artefak ini ke MLflow
-    mlflow.log_artifact(output_path)
-    mlflow.log_param("output_file", output_path)
-
-    print("✅ Preprocessing selesai.")
+print(f"🚧 Menyimpan hasil preprocessing ke: {output_path}...")
+df.to_csv(output_path, index=False)
+print("✅ CSV berhasil disimpan!")

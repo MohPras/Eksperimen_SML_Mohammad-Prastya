@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/610606018132532471/19db3ba8a6e34eb9b50b9d89ddd560e1/artifacts
+end_time: 1750365229380
+entry_point_name: ''
+experiment_id: '610606018132532471'
+lifecycle_stage: active
+run_id: 19db3ba8a6e34eb9b50b9d89ddd560e1
+run_name: bald-quail-361
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750365178311
+status: 3
+tags: []
+user_id: promac

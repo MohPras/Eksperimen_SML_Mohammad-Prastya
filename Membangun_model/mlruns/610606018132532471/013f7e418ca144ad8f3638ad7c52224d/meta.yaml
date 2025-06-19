@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/610606018132532471/013f7e418ca144ad8f3638ad7c52224d/artifacts
+end_time: 1750364870263
+entry_point_name: ''
+experiment_id: '610606018132532471'
+lifecycle_stage: active
+run_id: 013f7e418ca144ad8f3638ad7c52224d
+run_name: Modeling_Tanpa_Tuning
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750364851890
+status: 3
+tags: []
+user_id: promac
