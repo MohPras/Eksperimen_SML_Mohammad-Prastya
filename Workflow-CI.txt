@@ -1,5 +1,5 @@
 # Eksperimen_SML_Mohammad
-https://github.com/MohPras/Eksperimen_SML_Mohammad-Prastya
+https://github.com/MohPras/SMSML_Mohammad-Nurdin-Prastya-Hermansah
 
 # Workflow-CI
-https://github.com/MohPras/Eksperimen_SML_Mohammad-Prastya/tree/main/Workflow-CI
+https://github.com/MohPras/SMSML_Mohammad-Nurdin-Prastya-Hermansah/tree/main/Workflow-CI

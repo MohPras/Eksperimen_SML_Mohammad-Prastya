@@ -1,5 +1,5 @@
 # Eksperimen_SML_Mohammad
-https://github.com/MohPras/Eksperimen_SML_Mohammad-Prastya
+https://github.com/MohPras/SMSML_Mohammad-Nurdin-Prastya-Hermansah
 
 # Membangun_model
-https://github.com/MohPras/Eksperimen_SML_Mohammad-Prastya/tree/main/Membangun_model
+https://github.com/MohPras/SMSML_Mohammad-Nurdin-Prastya-Hermansah/tree/main/Membangun_model
