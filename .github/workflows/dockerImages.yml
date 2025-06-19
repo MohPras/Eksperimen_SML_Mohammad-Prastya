@@ -3,31 +3,28 @@ name: Build & Push Model Docker Image
 on:
   # Trigger otomatis setelah workflow 'CI Training & Evaluasi' selesai dengan sukses
   workflow_run:
-    workflows: ["CI Training & Evaluasi"] # Nama persis dari workflow training kamu
+    workflows: ["CI Training & Evaluasi"] 
     types:
-      - completed # Terpicu saat workflow training selesai (baik sukses/gagal)
+      - completed 
     branches:
-      - main # Batasi agar hanya terpicu oleh training workflow di branch 'main'
+      - main 
 
-  # Trigger manual: Pertahankan ini jika kamu juga ingin bisa memicu manual dari UI GitHub Actions
+  # Trigger manual
   workflow_dispatch:
     inputs:
       mlflow_run_id:
         description: 'MLflow Run ID of the model to deploy (e.g., from training workflow logs)'
-        required: false # Tidak lagi 'required' karena otomatisasi tidak menyediakan ini
+        required: false 
         type: string
 
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
-    # Pastikan workflow ini hanya berjalan jika workflow training sebelumnya berhasil
     if: github.event.workflow_run.conclusion == 'success'
 
-    # Variabel lingkungan untuk repositori artifacts kamu
+    # Variabel lingkungan untuk repositori artifacts
     env:
-      # Ini adalah lokasi di mana kamu menyimpan artifacts MLflow secara persisten.
-      # Sesuaikan dengan URL repositori 'mlflow-artifacts' kamu.
-      MLFLOW_ARTIFACTS_REPO_PATH: "mlflow-artifacts" # Nama folder lokal setelah clone
+      MLFLOW_ARTIFACTS_REPO_PATH: "mlflow-artifacts"
 
     steps:
       - name: Checkout Workflow Repository
@@ -43,8 +40,6 @@ jobs:
           # Sesuaikan URL dengan repositori 'mlflow-artifacts' kamu yang sebenarnya.
           git clone https://x-access-token:${{ secrets.ARTIFACT_TOKEN }}@github.com/MohPras/mlflow-artifacts.git ${{ env.MLFLOW_ARTIFACTS_REPO_PATH }}
         env:
-          # Pastikan kamu telah mengatur ARTIFACT_TOKEN sebagai Secret di repositori ini.
-          # Token ini harus punya izin baca (read) ke repositori 'mlflow-artifacts'.
           ARTIFACT_TOKEN: ${{ secrets.ARTIFACT_TOKEN }}
 
       - name: Set up Python 3.12
