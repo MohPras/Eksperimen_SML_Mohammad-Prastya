@@ -40,7 +40,7 @@ def main(csv_path):
     }
 
     # Mulai run experiment
-    with mlflow.start_run(run_name="Modeling_Dengan_Tuning"):
+    with mlflow.start_run(run_name="Modeling_Dengan_Tuning", nested=True):
         rf = RandomForestClassifier(random_state=42)
 
         grid_search = GridSearchCV(
