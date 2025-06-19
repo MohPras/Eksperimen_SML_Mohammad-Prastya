@@ -7,10 +7,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import classification_report, confusion_matrix
 
-# Atur tracking URI untuk CI atau lokal
-mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "file:./mlruns"))
-mlflow.set_experiment("Eksperimen_SML_Mohammad_Nurdin_Prastya_Hermansah")
-
 # Aktifkan autolog agar metric, param, dan model otomatis dicatat
 mlflow.sklearn.autolog()
 
